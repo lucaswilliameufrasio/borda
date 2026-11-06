@@ -156,19 +156,18 @@ Um teste automatizado cobre o contrato de cada módulo com um roteador falso. A 
 
 ## Decisões fechadas
 
-- A fatia 1 é uma API em Go e um frontend separado. Um hub acompanha vários agents. Cada agent fala com um MikroTik.
+- A fatia 1 é uma API em Go e um frontend SvelteKit separado. A interface nasce em inglês e português do Brasil, com Paraglide. Um hub acompanha vários agents. Cada agent fala com um MikroTik.
 - No setup, a pessoa escolhe o cofre. Os quatro adaptadores fazem parte dessa escolha: arquivo cifrado, Ciphera, Infisical e chaveiro do sistema.
 - A leitura funciona em qualquer roteador que tenha rota padrão. Ela não exige os comentários estáveis. Esses comentários só entram na prova e no cadastro de WAN.
 
 ## Decisões em aberto
 
-1. Tecnologia do frontend. A API é Go. O cliente ainda não tem framework escolhido.
-2. Endereço de checagem. Ele é configuração do tenant, nunca DNS da LAN. Falta o valor inicial sugerido na tela de setup.
-3. Onde o hub remoto mora, se o modo separado for usado. Isso não muda a regra de que a senha fica no agent.
-4. Qual modelo atende o assistente. Ele entra atrás do módulo de assistente, na fatia 5, e continua sem cliente do roteador.
-5. Por quanto tempo guardar amostra de aparelho e de caminho.
-6. Licença do repositório. Ainda não há arquivo de licença.
+1. Endereço de checagem. Ele é configuração do tenant, nunca DNS da LAN. Falta o valor inicial sugerido na tela de setup.
+2. Onde o hub remoto mora, se o modo separado for usado. Isso não muda a regra de que a senha fica no agent.
+3. Qual modelo atende o assistente. Ele entra atrás do módulo de assistente, na fatia 5, e continua sem cliente do roteador.
+4. Por quanto tempo guardar amostra de aparelho e de caminho.
+5. Licença do repositório. Ainda não há arquivo de licença.
 
 ## O que este plano não autoriza
 
-Abrir o código da fatia 1 antes da tecnologia do frontend. A leitura não aponta para um roteador de produção até haver um laboratório ou uma confirmação explícita.
+A leitura não aponta para um roteador de produção até haver um laboratório ou uma confirmação explícita. As decisões em aberto não bloqueiam a fatia 1.
