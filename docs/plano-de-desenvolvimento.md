@@ -4,7 +4,7 @@ Console local para a borda da rede. A pessoa abre e vê por onde a casa está sa
 
 ## Resultado
 
-Um processo na LAN guarda a sessão do roteador. A interface mostra o caminho ativo, a prontidão da saída reserva e os aparelhos conhecidos. Toda escrita é uma ação nomeada, mostrada antes, e só segue depois de confirmação. Um modelo de linguagem pode explicar o estado ou propor uma ação dessa lista. Ele não recebe credencial, export, backup nem senha, e não grava configuração sozinho.
+A interface é um frontend separado. Ela fala com uma API em Go. Cada roteador tem um agent na LAN, e a API pode acompanhar vários agents ao mesmo tempo. O agent guarda a sessão daquele roteador e a credencial, só na memória. A interface mostra o caminho ativo, a prontidão da saída reserva e os aparelhos conhecidos de cada um. Toda escrita é uma ação nomeada, mostrada antes, e só segue depois de confirmação. Um modelo de linguagem pode explicar o estado ou propor uma ação dessa lista. Ele não recebe credencial, export, backup nem senha, e não grava configuração sozinho.
 
 ## Fora deste produto
 
@@ -21,10 +21,10 @@ Um processo na LAN guarda a sessão do roteador. A interface mostra o caminho at
 | Morador | Ver se há saída, qual WAN está ativa e quais aparelhos estão na LAN. Pedir a prova da saída reserva e confirmar uma mudança de failover. | Gravar política sem a confirmação daquela ação. |
 | Operador | O mesmo morador quando muda política: cadastrar uma WAN, mudar distância, desligar uma checagem. Confirma cada escrita. | Executar comando fora da lista fechada. |
 | Agent | Único processo que guarda a sessão do roteador e a credencial, só na memória. | Enviar a senha ao hub, ao modelo ou ao log. |
-| Hub | Interface, histórico e assistente. No modo local, hub e agent são o mesmo processo. | Guardar a senha do roteador quando está separado do agent. |
+| Hub | API, histórico e assistente. Acompanha um ou mais agents, um roteador por agent. | Guardar a senha do roteador. A interface não fala com o RouterOS. |
 | Modelo | Ler um retrato já filtrado e devolver explicação ou proposta tipada. | Ter cliente do roteador ou cofre. |
 
-Os dois modos de execução fazem parte do produto. No modo local, uma pessoa sobe um processo na máquina da LAN. A interface escuta em `127.0.0.1` ou na LAN, e não há conta remota. No modo separado, o agent fica na LAN e o hub pode estar em outro host. O hub guarda a identidade do agent e os retratos que ele envia. Um comando do hub chega como pedido assinado. O agent só executa o que a política local permite, e uma escrita pede confirmação.
+Os dois modos de execução fazem parte do produto. No modo local, a API e os agents sobem nas máquinas da LAN e não há conta remota. No modo separado, cada agent fica na LAN do seu roteador e o hub pode estar em outro host. O hub guarda a identidade de cada agent e os retratos que eles enviam. Um comando do hub chega como pedido assinado. O agent só executa o que a política local permite, e uma escrita pede confirmação. A senha não atravessa esse canal.
 
 ## Jornadas
 
@@ -32,7 +32,7 @@ Cada jornada tem uma tela. Estado, cadastro e ação destrutiva não dividem o m
 
 ### 1. Preparar a casa
 
-Uma vez por casa. O dia a dia não pede isso de novo. A escolha fica nas configurações do tenant, fora da tela de caminho.
+Uma vez por roteador. O dia a dia não pede isso de novo. Incluir outro MikroTik repete esta jornada para aquele aparelho. A escolha fica nas configurações do tenant, fora da tela de caminho.
 
 1. A pessoa informa o nome do tenant.
 2. O hub lista os gateways das rotas desta máquina que aceitam SSH. Um só pede confirmação. Vários, a pessoa escolhe. Nenhum, ela digita o endereço.
@@ -111,15 +111,16 @@ Cada fatia fecha uma jornada e fica demonstrável sozinha. Nada abaixo está imp
 
 ### 1. Setup e caminho ativo, só leitura
 
-Setup do tenant com a escolha do cofre, e em seguida o hub local só de leitura: caminho ativo, rotas, forward e leases. A credencial fica fora do código e fora do log.
+A pessoa escolhe o cofre e o agent daquele roteador. A API em Go entrega o retrato. O frontend, separado, mostra a lista de roteadores e, ao abrir um, o caminho ativo, as rotas, o forward e os leases. A credencial fica fora do código, fora do log e fora do frontend.
 
 | ID | Resultado observável |
 | --- | --- |
-| AC-01 | Depois do setup, a pessoa abre o console e vê a rota padrão ativa, a porta de saída e se a checagem responde. A senha não aparece na tela nem no log. |
-| AC-02 | Sem rota padrão, a tela mostra o estado vazio e não inventa um caminho. |
-| AC-03 | Sem sessão com o roteador, a tela mostra a falha e não mostra segredo. |
-| AC-04 | Leases aparecem quando o DHCP do roteador os tem. A lista vazia é um estado válido. |
+| AC-01 | Depois do setup de um roteador, a pessoa abre o console, escolhe esse roteador e vê a rota padrão ativa, a porta de saída e se a checagem responde. A senha não aparece na tela nem no log. |
+| AC-02 | Sem rota padrão, a tela daquele roteador mostra o estado vazio e não inventa um caminho. |
+| AC-03 | Sem sessão com um roteador, a tela mostra a falha daquele agent e não mostra segredo. Os outros agents continuam visíveis. |
+| AC-04 | Leases aparecem quando o DHCP daquele roteador os tem. A lista vazia é um estado válido. |
 | AC-05 | Esta fatia não grava no roteador. |
+| AC-06 | Dois agents cadastrados aparecem como dois roteadores. O retrato de um não se mistura com o do outro. |
 
 ### 2. Prova do USB
 
@@ -127,9 +128,9 @@ Confirmação, desabilitar e reabilitar a rota primária, e a medida de um desti
 
 | ID | Resultado observável |
 | --- | --- |
-| AC-06 | Sem confirmação, a rota primária permanece ativa. |
-| AC-07 | Com confirmação, a prova mede o destino pela USB e pela LAN, e a rota primária termina ativa. |
-| AC-08 | Cancelar ou falhar a prova também deixa a rota primária ativa. |
+| AC-07 | Sem confirmação, a rota primária permanece ativa. |
+| AC-08 | Com confirmação, a prova mede o destino pela USB e pela LAN, e a rota primária termina ativa. |
+| AC-09 | Cancelar ou falhar a prova também deixa a rota primária ativa. |
 
 ### 3. Inventário de aparelhos
 
@@ -153,19 +154,21 @@ A fatia 1 é a única que responde "por onde a casa está saindo" sem escrever n
 
 Um teste automatizado cobre o contrato de cada módulo com um roteador falso. A jornada de ponta a ponta usa um RouterOS de laboratório. Teste verde sem essa jornada não fecha o aceite.
 
+## Decisões fechadas
+
+- A fatia 1 é uma API em Go e um frontend separado. Um hub acompanha vários agents. Cada agent fala com um MikroTik.
+- No setup, a pessoa escolhe o cofre. Os quatro adaptadores fazem parte dessa escolha: arquivo cifrado, Ciphera, Infisical e chaveiro do sistema.
+- A leitura funciona em qualquer roteador que tenha rota padrão. Ela não exige os comentários estáveis. Esses comentários só entram na prova e no cadastro de WAN.
+
 ## Decisões em aberto
 
-Estas escolhas bloqueiam o início do código. O plano não as trata como fechadas.
-
-1. Interface da fatia 1. Recomendação: um processo em Go que serve HTML e escuta em `127.0.0.1`. A alternativa é uma API em Go e um frontend separado. Os dois modos de execução continuam valendo. A recomendação só reduz a primeira entrega a um processo.
-2. Cofre da fatia 1. O produto prevê quatro cofres. Recomendação: o primeiro adaptador é o chaveiro do sistema, com a interface dos outros já desenhada e sem implementação. A alternativa é entregar os quatro antes da primeira tela.
-3. Roteador já em uso. A leitura da fatia 1 funciona em qualquer rota padrão. A prova e o cadastro de WAN precisam dos comentários estáveis. Falta decidir se a primeira escrita reconhece os comentários de um roteador que já foi configurado à mão, ou se esse roteador passa a usar o contrato novo.
-4. Endereço de checagem. Ele é configuração do tenant, nunca DNS da LAN. Falta o valor inicial sugerido na tela de setup.
-5. Onde o hub remoto mora, se o modo separado for usado. Isso não muda a regra de que a senha fica no agent.
-6. Qual modelo atende o assistente. Ele entra atrás do módulo de assistente, na fatia 5, e continua sem cliente do roteador.
-7. Por quanto tempo guardar amostra de aparelho e de caminho.
-8. Licença do repositório. Ainda não há arquivo de licença.
+1. Tecnologia do frontend. A API é Go. O cliente ainda não tem framework escolhido.
+2. Endereço de checagem. Ele é configuração do tenant, nunca DNS da LAN. Falta o valor inicial sugerido na tela de setup.
+3. Onde o hub remoto mora, se o modo separado for usado. Isso não muda a regra de que a senha fica no agent.
+4. Qual modelo atende o assistente. Ele entra atrás do módulo de assistente, na fatia 5, e continua sem cliente do roteador.
+5. Por quanto tempo guardar amostra de aparelho e de caminho.
+6. Licença do repositório. Ainda não há arquivo de licença.
 
 ## O que este plano não autoriza
 
-Abrir o código da fatia 1, escolher um framework além da recomendação acima, ou apontar o processo para um roteador de produção. Isso espera as respostas das decisões 1 a 4.
+Abrir o código da fatia 1 antes da tecnologia do frontend. A leitura não aponta para um roteador de produção até haver um laboratório ou uma confirmação explícita.
