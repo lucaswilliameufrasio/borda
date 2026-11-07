@@ -42,6 +42,14 @@ export type Lease = {
 	hostName?: string;
 };
 
+export type Device = {
+	id: string;
+	mac: string;
+	address?: string;
+	name?: string;
+	seenOn?: string;
+};
+
 export type Reserve = {
 	interfaceName: string;
 	running: boolean;
@@ -58,6 +66,7 @@ export type Snapshot = {
 	routes: RouteRow[];
 	forwardRules: ForwardRule[];
 	leases: Lease[];
+	devices: Device[];
 	reserve?: Reserve;
 };
 

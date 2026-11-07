@@ -107,7 +107,7 @@ Um gráfico de vazão da interface pode entrar depois do evento de troca. Sem o 
 
 ## Fatias
 
-Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A fatia 2 também. As duas foram exercitadas num CHR RouterOS 7.25.1 de laboratório, com SSH só em 127.0.0.1. A leitura mostrou a identidade `lab`, a rota padrão ativa por `ether1` e a checagem `1.1.1.1` respondendo. A prova confirmada respondeu 412 `PROOF_NOT_READY` com motivo `missing_primary`: esse CHR não tem LTE e a rota do DHCP não carrega o comentário `borda-primary`. A rota permaneceu ativa. AC-08 não fecha neste CHR, porque não há USB para medir. Rota ausente, sessão falha e dois agents seguem verificados só no roteador falso. As fatias 3 a 6 não começaram.
+Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A fatia 2 também. As duas foram exercitadas num CHR RouterOS 7.25.1 de laboratório, com SSH só em 127.0.0.1. A leitura mostrou a identidade `lab`, a rota padrão ativa por `ether1` e a checagem `1.1.1.1` respondendo. A prova confirmada respondeu 412 `PROOF_NOT_READY` com motivo `missing_primary`: esse CHR não tem LTE e a rota do DHCP não carrega o comentário `borda-primary`. A rota permaneceu ativa. AC-08 não fecha neste CHR, porque não há USB para medir. Rota ausente, sessão falha e dois agents seguem verificados só no roteador falso. A fatia 3 lista os aparelhos da leitura atual, juntando DHCP, ARP e neighbor pelo MAC. No mesmo CHR, o único aparelho foi o gateway visto por ARP em `ether1`, sem nome anunciado e sem lease. Abrir esse aparelho mostrou o endereço e o caminho ativo, e a rota padrão continuou ativa. Neighbor e lease nesse CHR estavam vazios; a junção deles ficou no teste. Não há amostra guardada, então visto há pouco e ausente continuam de fora. As fatias 4 a 6 não começaram.
 
 ### 1. Setup e caminho ativo, só leitura
 
@@ -134,7 +134,13 @@ Confirmação, desabilitar e reabilitar a rota primária, e a medida de um desti
 
 ### 3. Inventário de aparelhos
 
-A pessoa abre um aparelho e vê endereço, nome e o caminho de saída associado. Nada é alterado no firewall nem na rota.
+A pessoa abre um aparelho da leitura atual e vê endereço, nome anunciado e o caminho ativo daquele roteador. DHCP, ARP e neighbor com o mesmo MAC são um aparelho só. Nada é alterado no firewall nem na rota. Sem amostra guardada, a tela não mostra visto há pouco nem ausente.
+
+| ID | Resultado observável |
+| --- | --- |
+| AC-10 | A pessoa abre um aparelho da leitura atual e vê o endereço, o nome anunciado quando existe, e o caminho ativo do roteador. A senha não aparece. |
+| AC-11 | Abrir o aparelho não altera o firewall nem a rota. |
+| AC-12 | DHCP, ARP e neighbor com o mesmo MAC viram um aparelho. Um MAC inválido não vira aparelho. |
 
 ### 4. Histórico de troca de caminho
 

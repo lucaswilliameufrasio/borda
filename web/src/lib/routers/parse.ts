@@ -3,6 +3,7 @@ import {
 	type ActiveRoute,
 	type CheckResult,
 	type DetailView,
+	type Device,
 	type FieldError,
 	type ForwardRule,
 	type Lease,
@@ -60,6 +61,7 @@ export function parseSnapshot(value: unknown): Snapshot {
 		routes: readRoutes(value),
 		forwardRules: readForward(value),
 		leases: readLeases(value),
+		devices: readDevices(value),
 	};
 	const identity = readOptionalRecord(value, 'identity');
 	if (identity !== undefined) {
@@ -224,6 +226,43 @@ function readLeases(value: Record<string, unknown>): Lease[] {
 		leases.push(lease);
 	}
 	return leases;
+}
+
+function readDevices(value: Record<string, unknown>): Device[] {
+	const rows = readOptionalArray(value, 'devices');
+	const devices: Device[] = [];
+	for (const item of rows) {
+		if (!isRecord(item)) {
+			throw new ParseError('devices');
+		}
+		const device: Device = {
+			id: requireString(item, 'id'),
+			mac: requireString(item, 'mac'),
+		};
+		const address = readOptionalString(item, 'address');
+		const name = readOptionalString(item, 'name');
+		const seenOn = readOptionalString(item, 'seen_on');
+		if (address !== undefined) {
+			device.address = address;
+		}
+		if (name !== undefined) {
+			device.name = name;
+		}
+		if (seenOn !== undefined) {
+			device.seenOn = seenOn;
+		}
+		devices.push(device);
+	}
+	return devices;
+}
+
+export function findDevice(devices: Device[], id: string): Device | undefined {
+	for (const device of devices) {
+		if (device.id === id) {
+			return device;
+		}
+	}
+	return undefined;
 }
 
 function readActiveRoute(value: Record<string, unknown>): ActiveRoute {

@@ -171,11 +171,11 @@
 		{/if}
 	</div>
 	<div class="panels">
-		{@render tables(snapshot)}
+		{@render tables(snapshot, data.state.router.id)}
 	</div>
 {/if}
 
-{#snippet tables(snapshot: Snapshot)}
+{#snippet tables(snapshot: Snapshot, routerId: string)}
 	<section class="panel">
 		<h2>{m.routesTitle()}</h2>
 		{#if snapshot.routes.length === 0}
@@ -228,6 +228,40 @@
 								<td>{rule.comment ?? ''}</td>
 								<td>{rule.inInterface ?? ''}</td>
 								<td>{rule.outInterface ?? ''}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</section>
+
+	<section class="panel panel-wide">
+		<h2>{m.devicesTitle()}</h2>
+		{#if snapshot.devices.length === 0}
+			<p class="empty">{m.noDevices()}</p>
+		{:else}
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th>{m.columnHostName()}</th>
+							<th>{m.columnAddress()}</th>
+							<th>{m.columnMac()}</th>
+							<th>{m.columnSeenOn()}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each snapshot.devices as device (device.id)}
+							<tr>
+								<td>
+									<a class="row-link" href={resolve('/routers/[id]/devices/[mac]', { id: routerId, mac: device.id })}>
+										{device.name ?? device.address ?? device.mac}
+									</a>
+								</td>
+								<td>{device.address ?? ''}</td>
+								<td class="mono">{device.mac}</td>
+								<td>{device.seenOn ?? ''}</td>
 							</tr>
 						{/each}
 					</tbody>

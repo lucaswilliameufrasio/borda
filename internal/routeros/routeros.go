@@ -68,6 +68,8 @@ type Reading struct {
 	Routes          []Route
 	Forward         []ForwardRule
 	Leases          []Lease
+	ARP             []ARPEntry
+	Neighbors       []Neighbor
 	Addresses       []Address
 	LTE             []LTE
 	CheckReceived   *int

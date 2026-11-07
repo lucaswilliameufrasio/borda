@@ -74,5 +74,12 @@
 	"proofFailed": "The proof did not pass. The primary route is active.",
 	"proofNotRestored": "The primary route did not become active again.",
 	"proofUsb": "Through USB",
-	"proofLan": "Through the LAN"
+	"proofLan": "Through the LAN",
+	"devicesTitle": "Devices",
+	"noDevices": "No device seen right now.",
+	"deviceNoName": "No announced name.",
+	"deviceExit": "Exit path",
+	"deviceExitNote": "Traffic from this device follows the router's active path.",
+	"deviceMissing": "This device is not in the current reading.",
+	"columnSeenOn": "Seen on"
 }

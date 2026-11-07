@@ -13,6 +13,8 @@ func seedMemory(reader *routeros.Memory) {
 		"address\tlte1\t192.0.2.50/32\n"+
 		"lte\tlte1\ttrue\n"+
 		"lease\t192.0.2.20\tAA:BB:CC:DD:EE:FF\tphone\n"+
+		"arp\t192.0.2.20\tAA:BB:CC:DD:EE:FF\tbridge\n"+
+		"neighbor\t192.0.2.40\t11:22:33:44:55:66\tcamera\tbridge\n"+
 		"check\t1\n")
 	reader.Set("other.example", ""+
 		"identity\tOther\t7.0\n"+

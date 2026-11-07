@@ -74,5 +74,12 @@
 	"proofFailed": "A prova não passou. A rota primária está ativa.",
 	"proofNotRestored": "A rota primária não voltou a ficar ativa.",
 	"proofUsb": "Pela USB",
-	"proofLan": "Pela LAN"
+	"proofLan": "Pela LAN",
+	"devicesTitle": "Aparelhos",
+	"noDevices": "Nenhum aparelho visto agora.",
+	"deviceNoName": "Sem nome anunciado.",
+	"deviceExit": "Caminho de saída",
+	"deviceExitNote": "O tráfego deste aparelho segue o caminho ativo do roteador.",
+	"deviceMissing": "Este aparelho não está na leitura atual.",
+	"columnSeenOn": "Visto em"
 }

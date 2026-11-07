@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { ParseError } from '../../src/lib/routers/model';
-import { detailView, fieldMessage, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
+import { detailView, fieldMessage, findDevice, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
 import { buildProofBody, buildRegisterBody } from '../../src/lib/routers/request';
 
 it('Should show an empty route when no default is active', () => {
@@ -73,6 +73,27 @@ it('Should not share lease arrays between snapshots', () => {
 	first.leases.push({ address: '192.0.2.21', mac: 'AA:BB:CC:DD:EE:00' });
 	expect(second.leases).toEqual([]);
 	expect(second.name).toBe('Dois');
+});
+
+it('Should find a device by mac id', () => {
+	const snapshot = parseSnapshot({
+		router_id: 'edge-router',
+		name: 'Casa',
+		session: 'connected',
+		devices: [
+			{
+				id: 'aabbccddeeff',
+				mac: 'AA:BB:CC:DD:EE:FF',
+				address: '192.0.2.20',
+				name: 'phone',
+				seen_on: 'bridge',
+			},
+		],
+	});
+	expect(findDevice(snapshot.devices, 'aabbccddeeff')?.name).toBe('phone');
+	expect(findDevice(snapshot.devices, 'aabbccddeeff')?.seenOn).toBe('bridge');
+	expect(findDevice(snapshot.devices, '000000000000')).toBeUndefined();
+	expect(JSON.stringify(snapshot).includes('router_password')).toBe(false);
 });
 
 it('Should build a file vault body without a remote token', () => {

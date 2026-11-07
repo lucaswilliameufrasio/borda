@@ -34,6 +34,8 @@ func TestShouldParseActiveRouteAndRejectWritesInScript(t *testing.T) {
 		"address\tlte1\t10.40.0.2/24\n" +
 		"lte\tlte1\ttrue\n" +
 		"lease\t192.0.2.20\tAA:BB:CC:DD:EE:FF\tphone\n" +
+		"arp\t192.0.2.20\tAA:BB:CC:DD:EE:FF\tbridge\n" +
+		"neighbor\t192.0.2.40\t11:22:33:44:55:66\tcamera\tbridge\n" +
 		"check\t1\n")
 	active := ActiveRoute(reading.Routes)
 	if active == nil || active.InterfaceName != "ether1" || active.Distance != 1 {
@@ -44,6 +46,10 @@ func TestShouldParseActiveRouteAndRejectWritesInScript(t *testing.T) {
 	}
 	if reading.CheckReceived == nil || *reading.CheckReceived != 1 {
 		t.Fatal("check")
+	}
+	devices := DevicesFrom(reading)
+	if len(devices) != 2 || devices[1].Name != "phone" || devices[0].Name != "camera" {
+		t.Fatalf("devices %#v", devices)
 	}
 }
 

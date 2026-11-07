@@ -32,6 +32,15 @@ a {
 	color: inherit;
 }
 
+.row-link {
+	color: var(--brass);
+	text-decoration: none;
+}
+
+.row-link:hover {
+	text-decoration: underline;
+}
+
 :focus-visible {
 	outline: 2px solid var(--brass);
 	outline-offset: 2px;

@@ -18,6 +18,8 @@ func ReadScript(checkAddress string) (string, error) {
 		`:foreach i in=[/ip address find] do={ :put ("address` + tab + `" . [/ip address get $i interface] . "` + tab + `" . [/ip address get $i address]) }`,
 		`:foreach i in=[/interface find where type="lte"] do={ :put ("lte` + tab + `" . [/interface get $i name] . "` + tab + `" . [/interface get $i running]) }`,
 		`:foreach i in=[/ip dhcp-server lease find] do={ :put ("lease` + tab + `" . [/ip dhcp-server lease get $i address] . "` + tab + `" . [/ip dhcp-server lease get $i mac-address] . "` + tab + `" . [/ip dhcp-server lease get $i host-name]) }`,
+		`:foreach i in=[/ip arp find] do={ :put ("arp` + tab + `" . [/ip arp get $i address] . "` + tab + `" . [/ip arp get $i mac-address] . "` + tab + `" . [/ip arp get $i interface]) }`,
+		`:foreach i in=[/ip neighbor find] do={ :put ("neighbor` + tab + `" . [/ip neighbor get $i address] . "` + tab + `" . [/ip neighbor get $i mac-address] . "` + tab + `" . [/ip neighbor get $i identity] . "` + tab + `" . [/ip neighbor get $i interface]) }`,
 	}
 	if checkAddress != "" {
 		if !safeCheckAddress.MatchString(checkAddress) {

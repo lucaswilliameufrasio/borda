@@ -13,6 +13,7 @@ type Snapshot struct {
 	Routes       *[]RouteJSON     `json:"routes,omitempty"`
 	ForwardRules *[]ForwardJSON   `json:"forward_rules,omitempty"`
 	Leases       *[]LeaseJSON     `json:"leases,omitempty"`
+	Devices      *[]DeviceJSON    `json:"devices,omitempty"`
 	Reserve      *ReserveJSON     `json:"reserve,omitempty"`
 }
 
@@ -50,6 +51,14 @@ type LeaseJSON struct {
 	Address  string `json:"address"`
 	MAC      string `json:"mac"`
 	HostName string `json:"host_name,omitempty"`
+}
+
+type DeviceJSON struct {
+	ID      string `json:"id"`
+	MAC     string `json:"mac"`
+	Address string `json:"address,omitempty"`
+	Name    string `json:"name,omitempty"`
+	SeenOn  string `json:"seen_on,omitempty"`
 }
 
 type ReserveJSON struct {
@@ -99,6 +108,18 @@ func fillConnected(snapshot Snapshot, router storedRouter, reading routeros.Read
 		})
 	}
 	snapshot.Leases = &leases
+	joined := routeros.DevicesFrom(reading)
+	devices := make([]DeviceJSON, 0, len(joined))
+	for _, device := range joined {
+		devices = append(devices, DeviceJSON{
+			ID:      device.ID,
+			MAC:     device.MAC,
+			Address: device.Address,
+			Name:    device.Name,
+			SeenOn:  device.SeenOn,
+		})
+	}
+	snapshot.Devices = &devices
 	if router.CheckAddress != "" {
 		responding := false
 		if reading.CheckReceived != nil && *reading.CheckReceived > 0 {

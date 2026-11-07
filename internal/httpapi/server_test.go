@@ -62,6 +62,9 @@ func TestShouldCreateRouterWithoutReturningThePassword(t *testing.T) {
 	if !strings.Contains(snapshot.Body.String(), `"responding":true`) {
 		t.Fatal("snapshot missing check")
 	}
+	if !strings.Contains(snapshot.Body.String(), `"id":"aabbccddeeff"`) || !strings.Contains(snapshot.Body.String(), `"name":"phone"`) {
+		t.Fatal("snapshot missing the lease device")
+	}
 
 	other := postJSON(handler, "/v1/routers", `{
 		"name": "Vazio",

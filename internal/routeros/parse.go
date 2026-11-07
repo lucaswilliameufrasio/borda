@@ -70,6 +70,23 @@ func ParseReading(output string) Reading {
 					HostName: hostName,
 				})
 			}
+		case "arp":
+			if len(fields) >= 4 {
+				reading.ARP = append(reading.ARP, ARPEntry{
+					Address:       fields[1],
+					MAC:           fields[2],
+					InterfaceName: fields[3],
+				})
+			}
+		case "neighbor":
+			if len(fields) >= 5 {
+				reading.Neighbors = append(reading.Neighbors, Neighbor{
+					Address:       fields[1],
+					MAC:           fields[2],
+					Identity:      fields[3],
+					InterfaceName: fields[4],
+				})
+			}
 		case "check":
 			if len(fields) >= 2 {
 				received, err := strconv.Atoi(fields[1])
