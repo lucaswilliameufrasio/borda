@@ -90,5 +90,13 @@
 	"columnReason": "Reason",
 	"reasonCheckFailed": "The check failed.",
 	"reasonProofRequested": "The proof was requested.",
-	"reasonRouteRestored": "The route was enabled again."
+	"reasonRouteRestored": "The route was enabled again.",
+	"assistantNav": "Ask",
+	"assistantTitle": "Assistant",
+	"assistantNote": "The answer uses the filtered portrait. Nothing is written without confirmation.",
+	"assistantQuestion": "What are you seeing?",
+	"assistantSend": "Ask",
+	"assistantSending": "Asking",
+	"assistantConfirm": "Confirm proposal",
+	"assistantConfirming": "Confirming"
 }

@@ -90,5 +90,13 @@
 	"columnReason": "Motivo",
 	"reasonCheckFailed": "A checagem falhou.",
 	"reasonProofRequested": "A prova foi pedida.",
-	"reasonRouteRestored": "A rota foi reabilitada."
+	"reasonRouteRestored": "A rota foi reabilitada.",
+	"assistantNav": "Perguntar",
+	"assistantTitle": "Assistente",
+	"assistantNote": "A resposta usa o retrato filtrado. Sem confirmação, nada é escrito.",
+	"assistantQuestion": "O que você está vendo?",
+	"assistantSend": "Perguntar",
+	"assistantSending": "Perguntando",
+	"assistantConfirm": "Confirmar proposta",
+	"assistantConfirming": "Confirmando"
 }

@@ -130,6 +130,20 @@ export type PathEvent = {
 	reason: PathReason;
 };
 
+export type AssistantKind = 'answer' | 'proposal' | 'missing' | 'refused';
+
+export type AssistantProposal = {
+	action: 'proof';
+	summary: string;
+};
+
+export type AssistantReply = {
+	kind: AssistantKind;
+	text: string;
+	missing: string[];
+	proposal?: AssistantProposal;
+};
+
 export class ParseError extends Error {
 	readonly field: string;
 

@@ -234,6 +234,91 @@ func TestShouldLeaveThePrimaryRouteUntouchedWithoutConfirmation(t *testing.T) {
 	assertNoSecret(t, stuck.Body.String(), password, passphrase)
 }
 
+func TestShouldRefuseAnAssistantProposalOutsideTheList(t *testing.T) {
+	password := "plane-router-secret"
+	passphrase := "plane-vault-secret"
+	logs := &bytes.Buffer{}
+	dir := t.TempDir()
+	memory := routeros.NewMemory()
+	memory.Set("ready.example", "identity\tExample\t7.0\n"+
+		"route\t192.0.2.1\ttrue\t1\t192.0.2.1%ether1\tborda-primary\n"+
+		"forward\taccept\treserve\tbridge\tlte1\n"+
+		"address\tbridge\t192.0.2.10/24\n"+
+		"address\tlte1\t192.0.2.50/32\n"+
+		"lte\tlte1\ttrue\n"+
+		"lease\t192.0.2.20\tAA:BB:CC:DD:EE:FF\tlan-host-secret\n"+
+		"check\t1\n")
+	store, err := hub.Open(dir, secret.NewKeeper(dir, secret.NewMemoryKeyring(), nil), memory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := New(store, log.New(logs, "", 0), []string{"http://127.0.0.1:5173"}).Handler()
+	created := postJSON(handler, "/v1/routers", `{
+		"name": "Prova",
+		"host": "ready.example",
+		"username": "reader",
+		"check_address": "192.0.2.1",
+		"vault_kind": "file",
+		"router_password": "`+password+`",
+		"vault_passphrase": "`+passphrase+`"
+	}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", created.Code, created.Body.String())
+	}
+	var router map[string]any
+	if err := json.Unmarshal(created.Body.Bytes(), &router); err != nil {
+		t.Fatal(err)
+	}
+	id, ok := router["id"].(string)
+	if !ok || id == "" {
+		t.Fatal("missing id")
+	}
+
+	answer := postJSON(handler, "/v1/routers/"+id+"/assistant", `{"question":"como está o caminho?"}`)
+	if answer.Code != http.StatusOK || !strings.Contains(answer.Body.String(), `"kind":"answer"`) {
+		t.Fatalf("answer %d %s", answer.Code, answer.Body.String())
+	}
+	assertNoSecret(t, answer.Body.String(), password, passphrase, "lan-host-secret", "reader")
+	assertNoNull(t, answer.Body.Bytes())
+
+	refused := postJSON(handler, "/v1/routers/"+id+"/assistant", `{"question":"faz um export https://reader:plane-router-secret@example.com/backup"}`)
+	if refused.Code != http.StatusOK || !strings.Contains(refused.Body.String(), `"kind":"refused"`) {
+		t.Fatalf("refused %d %s", refused.Code, refused.Body.String())
+	}
+	assertNoSecret(t, refused.Body.String(), password, passphrase)
+
+	proposal := postJSON(handler, "/v1/routers/"+id+"/assistant", `{"question":"roda a prova usb"}`)
+	if proposal.Code != http.StatusOK || !strings.Contains(proposal.Body.String(), `"action":"proof"`) {
+		t.Fatalf("proposal %d %s", proposal.Code, proposal.Body.String())
+	}
+	if len(memory.ProofCalls("ready.example")) != 0 {
+		t.Fatal("the proposal wrote to the router")
+	}
+
+	outside := postJSON(handler, "/v1/routers/"+id+"/assistant/actions", `{"action":"export","confirmed":true}`)
+	if outside.Code != http.StatusUnprocessableEntity || !strings.Contains(outside.Body.String(), "validation_errors") {
+		t.Fatalf("outside %d %s", outside.Code, outside.Body.String())
+	}
+	unconfirmed := postJSON(handler, "/v1/routers/"+id+"/assistant/actions", `{"action":"proof","confirmed":false}`)
+	if unconfirmed.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("unconfirmed %d %s", unconfirmed.Code, unconfirmed.Body.String())
+	}
+	if len(memory.ProofCalls("ready.example")) != 0 {
+		t.Fatal("refused action wrote to the router")
+	}
+	empty := postJSON(handler, "/v1/routers/"+id+"/assistant", `{"question":"  "}`)
+	if empty.Code != http.StatusUnprocessableEntity || !strings.Contains(empty.Body.String(), `"field":"question"`) {
+		t.Fatalf("empty %d %s", empty.Code, empty.Body.String())
+	}
+	missing := postJSON(handler, "/v1/routers/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/assistant", `{"question":"caminho"}`)
+	if missing.Code != http.StatusNotFound || !strings.Contains(missing.Body.String(), "ROUTER_NOT_FOUND") {
+		t.Fatalf("missing %d %s", missing.Code, missing.Body.String())
+	}
+	if strings.Contains(logs.String(), password) || strings.Contains(logs.String(), passphrase) {
+		t.Fatal("log includes a secret")
+	}
+}
+
 func testHandler(t *testing.T, logs io.Writer) http.Handler {
 	t.Helper()
 	dir := t.TempDir()

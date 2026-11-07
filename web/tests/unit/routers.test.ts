@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { ParseError } from '../../src/lib/routers/model';
-import { detailView, fieldMessage, findDevice, parseEvents, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
+import { detailView, fieldMessage, findDevice, parseAssistant, parseEvents, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
 import { buildProofBody, buildRegisterBody } from '../../src/lib/routers/request';
 
 it('Should show an empty route when no default is active', () => {
@@ -106,6 +106,22 @@ it('Should keep path events in the order the hub returned', () => {
 	expect(() => parseEvents([{ id: 'cccccccccccccccccccccccccccccccc', at: '2026-11-07T15:00:00Z', reason: 'guessed' }])).toThrow(
 		ParseError,
 	);
+});
+
+it('Should keep an assistant proposal inside the closed list', () => {
+	const proposal = parseAssistant({
+		kind: 'proposal',
+		text: 'Nada muda até a confirmação.',
+		proposal: { action: 'proof', summary: 'A prova desabilita só a rota comentada borda-primary.' },
+	});
+	expect(proposal.kind).toBe('proposal');
+	expect(proposal.missing).toEqual([]);
+	expect(proposal.proposal?.action).toBe('proof');
+	const missing = parseAssistant({ kind: 'missing', text: 'Falta a sessão.', missing: ['session'] });
+	expect(missing.missing).toEqual(['session']);
+	expect(missing.proposal).toBeUndefined();
+	expect(() => parseAssistant({ kind: 'proposal', text: 'fora', proposal: { action: 'export', summary: 'no' } })).toThrow(ParseError);
+	expect(() => parseAssistant({ kind: 'guessed', text: 'fora' })).toThrow(ParseError);
 });
 
 it('Should build a file vault body without a remote token', () => {

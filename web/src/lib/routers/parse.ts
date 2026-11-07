@@ -7,6 +7,9 @@ import {
 	type FieldError,
 	type ForwardRule,
 	type Lease,
+	type AssistantKind,
+	type AssistantProposal,
+	type AssistantReply,
 	type PathEvent,
 	type PathReason,
 	type ProofResult,
@@ -281,6 +284,58 @@ function readReason(value: string): PathReason {
 		return value;
 	}
 	throw new ParseError('reason');
+}
+
+export function parseAssistant(value: unknown): AssistantReply {
+	if (!isRecord(value)) {
+		throw new ParseError('assistant');
+	}
+	const kind = readAssistantKind(requireString(value, 'kind'));
+	const text = requireString(value, 'text');
+	const missing = readStringList(value, 'missing');
+	if (kind === 'proposal') {
+		return { kind, text, missing, proposal: readProposal(value.proposal) };
+	}
+	if (value.proposal !== undefined) {
+		throw new ParseError('proposal');
+	}
+	return { kind, text, missing };
+}
+
+function readAssistantKind(value: string): AssistantKind {
+	if (value === 'answer' || value === 'proposal' || value === 'missing' || value === 'refused') {
+		return value;
+	}
+	throw new ParseError('kind');
+}
+
+function readProposal(value: unknown): AssistantProposal {
+	if (!isRecord(value)) {
+		throw new ParseError('proposal');
+	}
+	const action = requireString(value, 'action');
+	if (action !== 'proof') {
+		throw new ParseError('action');
+	}
+	return { action, summary: requireString(value, 'summary') };
+}
+
+function readStringList(record: Record<string, unknown>, key: string): string[] {
+	const value = record[key];
+	if (value === undefined) {
+		return [];
+	}
+	if (!Array.isArray(value)) {
+		throw new ParseError(key);
+	}
+	const items: string[] = [];
+	for (const item of value) {
+		if (typeof item !== 'string' || item === '') {
+			throw new ParseError(key);
+		}
+		items.push(item);
+	}
+	return items;
 }
 
 export function findDevice(devices: Device[], id: string): Device | undefined {

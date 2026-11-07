@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/lucaswilliameufrasio/borda/internal/assistant"
 	"github.com/lucaswilliameufrasio/borda/internal/hub"
 	"github.com/lucaswilliameufrasio/borda/internal/routeros"
 	"github.com/lucaswilliameufrasio/borda/internal/secret"
@@ -40,6 +41,8 @@ func New(store *hub.Store, logger *log.Logger, origins []string) *Server {
 	server.mux.HandleFunc("GET /v1/routers/{id}/events", server.events)
 	server.mux.HandleFunc("POST /v1/routers/{id}/session", server.unlock)
 	server.mux.HandleFunc("POST /v1/routers/{id}/proof", server.proof)
+	server.mux.HandleFunc("POST /v1/routers/{id}/assistant", server.assistant)
+	server.mux.HandleFunc("POST /v1/routers/{id}/assistant/actions", server.assistantAction)
 	return server
 }
 
@@ -153,6 +156,34 @@ func (server *Server) proof(response http.ResponseWriter, request *http.Request)
 		return
 	}
 	proof, err := server.store.Prove(request.Context(), request.PathValue("id"), body.Confirmed)
+	server.writeProof(response, proof, err)
+}
+
+func (server *Server) assistant(response http.ResponseWriter, request *http.Request) {
+	var body assistantBody
+	if err := decodeJSON(response, request, &body); err != nil {
+		writeDecodeError(response, err)
+		return
+	}
+	reply, err := server.store.Ask(request.Context(), request.PathValue("id"), body.Question)
+	if err != nil {
+		writeStoreError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, assistantResponse(reply))
+}
+
+func (server *Server) assistantAction(response http.ResponseWriter, request *http.Request) {
+	var body assistantActionBody
+	if err := decodeJSON(response, request, &body); err != nil {
+		writeDecodeError(response, err)
+		return
+	}
+	proof, err := server.store.ApplyProposal(request.Context(), request.PathValue("id"), body.Action, body.Confirmed)
+	server.writeProof(response, proof, err)
+}
+
+func (server *Server) writeProof(response http.ResponseWriter, proof routeros.Proof, err error) {
 	if err != nil {
 		var notReady *routeros.ProofError
 		if errors.As(err, &notReady) {
@@ -179,6 +210,20 @@ func (server *Server) proof(response http.ResponseWriter, request *http.Request)
 		"usb_received":   proof.USBReceived,
 		"lan_received":   proof.LANReceived,
 	})
+}
+
+func assistantResponse(reply assistant.Reply) assistantReplyBody {
+	body := assistantReplyBody{Kind: reply.Kind, Text: reply.Text}
+	if reply.Kind == assistant.KindMissing {
+		body.Missing = reply.Missing
+		if body.Missing == nil {
+			body.Missing = []string{}
+		}
+	}
+	if reply.Proposal != nil {
+		body.Proposal = &assistantProposalBody{Action: reply.Proposal.Action, Summary: reply.Proposal.Summary}
+	}
+	return body
 }
 
 func (server *Server) unlock(response http.ResponseWriter, request *http.Request) {
@@ -219,6 +264,27 @@ type unlockBody struct {
 
 type proofBody struct {
 	Confirmed bool `json:"confirmed"`
+}
+
+type assistantBody struct {
+	Question string `json:"question"`
+}
+
+type assistantActionBody struct {
+	Action    string `json:"action"`
+	Confirmed bool   `json:"confirmed"`
+}
+
+type assistantReplyBody struct {
+	Kind     string                 `json:"kind"`
+	Text     string                 `json:"text"`
+	Missing  []string               `json:"missing,omitempty"`
+	Proposal *assistantProposalBody `json:"proposal,omitempty"`
+}
+
+type assistantProposalBody struct {
+	Action  string `json:"action"`
+	Summary string `json:"summary"`
 }
 
 type errorBody struct {
