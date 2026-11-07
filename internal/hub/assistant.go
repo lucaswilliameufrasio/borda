@@ -92,7 +92,13 @@ func visibleReading(snapshot Snapshot) assistant.Reading {
 		reading.LeaseCount = len(*snapshot.Leases)
 	}
 	if snapshot.Devices != nil {
-		reading.DeviceCount = len(*snapshot.Devices)
+		count := 0
+		for _, device := range *snapshot.Devices {
+			if device.Presence == "" || device.Presence == PresenceNow {
+				count = count + 1
+			}
+		}
+		reading.DeviceCount = count
 	}
 	if snapshot.Reserve != nil {
 		reading.ReserveRunning = snapshot.Reserve.Running

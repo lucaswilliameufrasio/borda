@@ -28,6 +28,19 @@
 		return name;
 	}
 
+	function presenceText(presence: 'now' | 'recent' | 'absent' | undefined): string {
+		if (presence === 'recent') {
+			return m.presenceRecent();
+		}
+		if (presence === 'absent') {
+			return m.presenceAbsent();
+		}
+		if (presence === 'now') {
+			return m.presenceNow();
+		}
+		return '';
+	}
+
 	function sessionClass(session: 'unreachable' | 'authentication_rejected' | 'locked'): string {
 		if (session === 'locked') {
 			return 'banner banner-locked';
@@ -69,6 +82,10 @@
 			<article class="metric">
 				<span class="kicker">{m.columnSeenOn()}</span>
 				<strong>{portName(device.seenOn)}</strong>
+			</article>
+			<article class="metric">
+				<span class="kicker">{m.columnPresence()}</span>
+				<strong>{presenceText(device.presence)}</strong>
 			</article>
 		</section>
 		<section class="panel">

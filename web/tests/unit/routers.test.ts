@@ -174,6 +174,34 @@ it('Should read a field message by name', () => {
 	expect(fieldMessage([], 'host')).toBeUndefined();
 });
 
+it('Should read device presence and reject an unknown state', () => {
+	const snapshot = parseSnapshot({
+		router_id: 'edge-router',
+		name: 'Casa',
+		session: 'connected',
+		routes: [],
+		forward_rules: [],
+		leases: [],
+		devices: [{ id: 'aabbccddeeff', mac: 'AA:BB:CC:DD:EE:FF', presence: 'recent' }],
+	});
+	const device = snapshot.devices[0];
+	if (device === undefined) {
+		throw new Error('missing device');
+	}
+	expect(device.presence).toBe('recent');
+	expect(() =>
+		parseSnapshot({
+			router_id: 'edge-router',
+			name: 'Casa',
+			session: 'connected',
+			routes: [],
+			forward_rules: [],
+			leases: [],
+			devices: [{ id: 'aabbccddeeff', mac: 'AA:BB:CC:DD:EE:FF', presence: 'later' }],
+		}),
+	).toThrow(ParseError);
+});
+
 it('Should reject a snapshot that is not an object', () => {
 	expect(() => parseSnapshot([])).toThrow(ParseError);
 });

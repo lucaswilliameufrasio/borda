@@ -84,19 +84,21 @@ type fileState struct {
 
 // Store is the local router registry. Passwords stay in the keeper.
 type Store struct {
-	dir         string
-	path        string
-	historyPath string
-	linksPath   string
-	keeper      *secret.Keeper
-	reader      routeros.Reader
-	now         func() time.Time
+	dir          string
+	path         string
+	historyPath  string
+	linksPath    string
+	presencePath string
+	keeper       *secret.Keeper
+	reader       routeros.Reader
+	now          func() time.Time
 
 	mu           sync.Mutex
 	routers      []storedRouter
 	observations map[string]pathObservation
 	events       []storedEvent
 	links        []storedLink
+	presence     []storedPresence
 }
 
 func Open(dir string, keeper *secret.Keeper, reader routeros.Reader) (*Store, error) {
@@ -108,12 +110,14 @@ func Open(dir string, keeper *secret.Keeper, reader routeros.Reader) (*Store, er
 		path:         filepath.Join(dir, "routers.json"),
 		historyPath:  filepath.Join(dir, "events.json"),
 		linksPath:    filepath.Join(dir, "links.json"),
+		presencePath: filepath.Join(dir, "presence.json"),
 		keeper:       keeper,
 		reader:       reader,
 		routers:      []storedRouter{},
 		observations: map[string]pathObservation{},
 		events:       []storedEvent{},
 		links:        []storedLink{},
+		presence:     []storedPresence{},
 	}
 	if err := store.load(); err != nil {
 		return nil, err
@@ -122,6 +126,9 @@ func Open(dir string, keeper *secret.Keeper, reader routeros.Reader) (*Store, er
 		return nil, err
 	}
 	if err := store.loadLinks(); err != nil {
+		return nil, err
+	}
+	if err := store.loadPresence(); err != nil {
 		return nil, err
 	}
 	return store, nil
@@ -232,6 +239,15 @@ func (store *Store) Snapshot(ctx context.Context, id string) (Snapshot, error) {
 	if err := store.notePath(router.ID, filled); err != nil {
 		return Snapshot{}, err
 	}
+	if filled.Devices == nil {
+		empty := []DeviceJSON{}
+		filled.Devices = &empty
+	}
+	devices, err := store.notePresence(router.ID, *filled.Devices)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	filled.Devices = &devices
 	return filled, nil
 }
 

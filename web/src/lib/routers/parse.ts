@@ -4,6 +4,7 @@ import {
 	type CheckResult,
 	type DetailView,
 	type Device,
+	type DevicePresence,
 	type FieldError,
 	type HubPortrait,
 	type HubView,
@@ -248,6 +249,17 @@ function readLeases(value: Record<string, unknown>): Lease[] {
 	return leases;
 }
 
+function readPresence(value: Record<string, unknown>): DevicePresence | undefined {
+	const raw = readOptionalString(value, 'presence');
+	if (raw === undefined) {
+		return undefined;
+	}
+	if (raw === 'now' || raw === 'recent' || raw === 'absent') {
+		return raw;
+	}
+	throw new ParseError('presence');
+}
+
 function readDevices(value: Record<string, unknown>): Device[] {
 	const rows = readOptionalArray(value, 'devices');
 	const devices: Device[] = [];
@@ -262,6 +274,7 @@ function readDevices(value: Record<string, unknown>): Device[] {
 		const address = readOptionalString(item, 'address');
 		const name = readOptionalString(item, 'name');
 		const seenOn = readOptionalString(item, 'seen_on');
+		const presence = readPresence(item);
 		if (address !== undefined) {
 			device.address = address;
 		}
@@ -270,6 +283,9 @@ function readDevices(value: Record<string, unknown>): Device[] {
 		}
 		if (seenOn !== undefined) {
 			device.seenOn = seenOn;
+		}
+		if (presence !== undefined) {
+			device.presence = presence;
 		}
 		devices.push(device);
 	}

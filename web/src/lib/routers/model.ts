@@ -42,12 +42,15 @@ export type Lease = {
 	hostName?: string;
 };
 
+export type DevicePresence = 'now' | 'recent' | 'absent';
+
 export type Device = {
 	id: string;
 	mac: string;
 	address?: string;
 	name?: string;
 	seenOn?: string;
+	presence?: DevicePresence;
 };
 
 export type Reserve = {

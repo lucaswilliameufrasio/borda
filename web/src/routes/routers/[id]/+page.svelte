@@ -5,7 +5,7 @@
 	import { formElement, formString } from '#lib/dom.ts';
 	import { m } from '#lib/paraglide/messages.js';
 	import { createClient } from '#lib/routers/client.ts';
-	import { ApiError, type Snapshot } from '#lib/routers/model.ts';
+	import { ApiError, type DevicePresence, type Snapshot } from '#lib/routers/model.ts';
 	import { fieldMessage } from '#lib/routers/parse.ts';
 
 	let { data } = $props();
@@ -42,6 +42,19 @@
 			return m.emptyInterface();
 		}
 		return name;
+	}
+
+	function presenceText(presence: DevicePresence | undefined): string {
+		if (presence === 'recent') {
+			return m.presenceRecent();
+		}
+		if (presence === 'absent') {
+			return m.presenceAbsent();
+		}
+		if (presence === 'now') {
+			return m.presenceNow();
+		}
+		return '';
 	}
 
 	function sessionClass(session: 'unreachable' | 'authentication_rejected' | 'locked'): string {
@@ -262,6 +275,7 @@
 							<th>{m.columnAddress()}</th>
 							<th>{m.columnMac()}</th>
 							<th>{m.columnSeenOn()}</th>
+							<th>{m.columnPresence()}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -275,6 +289,7 @@
 								<td>{device.address ?? ''}</td>
 								<td class="mono">{device.mac}</td>
 								<td>{device.seenOn ?? ''}</td>
+								<td>{presenceText(device.presence)}</td>
 							</tr>
 						{/each}
 					</tbody>

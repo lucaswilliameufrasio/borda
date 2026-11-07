@@ -54,11 +54,12 @@ type LeaseJSON struct {
 }
 
 type DeviceJSON struct {
-	ID      string `json:"id"`
-	MAC     string `json:"mac"`
-	Address string `json:"address,omitempty"`
-	Name    string `json:"name,omitempty"`
-	SeenOn  string `json:"seen_on,omitempty"`
+	ID       string `json:"id"`
+	MAC      string `json:"mac"`
+	Address  string `json:"address,omitempty"`
+	Name     string `json:"name,omitempty"`
+	SeenOn   string `json:"seen_on,omitempty"`
+	Presence string `json:"presence,omitempty"`
 }
 
 type ReserveJSON struct {
