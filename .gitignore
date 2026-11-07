@@ -1,4 +1,10 @@
 /bin/
+/data/
 .env
 *.backup
 *.rsc
+web/node_modules/
+web/.svelte-kit/
+web/build/
+web/src/lib/paraglide/
+web/project.inlang/cache/

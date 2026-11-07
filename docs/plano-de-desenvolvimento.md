@@ -107,7 +107,7 @@ Um gráfico de vazão da interface pode entrar depois do evento de troca. Sem o 
 
 ## Fatias
 
-Cada fatia fecha uma jornada e fica demonstrável sozinha. Nada abaixo está implementado.
+Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A jornada com um RouterOS de laboratório ainda não foi executada. As fatias 2 a 6 não começaram.
 
 ### 1. Setup e caminho ativo, só leitura
 
