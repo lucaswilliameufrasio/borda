@@ -213,6 +213,32 @@ func (store *Store) Snapshot(ctx context.Context, id string) (Snapshot, error) {
 	return fillConnected(snapshot, router, reading), nil
 }
 
+// Prove runs the USB proof after an explicit confirmation.
+// Without confirmation it returns a validation error and does not call the router.
+func (store *Store) Prove(ctx context.Context, id string, confirmed bool) (routeros.Proof, error) {
+	if !confirmed {
+		return routeros.Proof{}, &ValidationError{Fields: []FieldError{{
+			Field:   "confirmed",
+			Message: "A prova só começa com confirmação.",
+		}}}
+	}
+	router, err := store.find(id)
+	if err != nil {
+		return routeros.Proof{}, err
+	}
+	password, err := store.keeper.Get(ctx, router.ID, router.Vault)
+	if err != nil {
+		return routeros.Proof{}, err
+	}
+	return store.reader.Prove(ctx, routeros.Target{
+		Host:         router.Host,
+		Port:         router.SSHPort,
+		Username:     router.Username,
+		Password:     password,
+		CheckAddress: router.CheckAddress,
+	})
+}
+
 func (store *Store) find(id string) (storedRouter, error) {
 	store.mu.Lock()
 	defer store.mu.Unlock()

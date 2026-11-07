@@ -6,8 +6,12 @@ import "github.com/lucaswilliameufrasio/borda/internal/routeros"
 func seedMemory(reader *routeros.Memory) {
 	reader.Set("connected.example", ""+
 		"identity\tExample\t7.0\n"+
-		"route\t192.0.2.1\ttrue\t1\t192.0.2.1%ether1\n"+
+		"route\t192.0.2.1\ttrue\t1\t192.0.2.1%ether1\tborda-primary\n"+
 		"forward\taccept\tlan\tbridge\tether1\n"+
+		"forward\taccept\treserve\tbridge\tlte1\n"+
+		"address\tbridge\t192.0.2.10/24\n"+
+		"address\tlte1\t192.0.2.50/32\n"+
+		"lte\tlte1\ttrue\n"+
 		"lease\t192.0.2.20\tAA:BB:CC:DD:EE:FF\tphone\n"+
 		"check\t1\n")
 	reader.Set("other.example", ""+

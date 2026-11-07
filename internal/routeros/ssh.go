@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // SSHReader runs the read-only script over OpenSSH.
@@ -18,34 +20,111 @@ type SSHReader struct {
 }
 
 func (reader *SSHReader) Read(ctx context.Context, target Target) (Reading, error) {
-	if target.Password == "" {
-		return Reading{}, ErrAuthenticationRejected
-	}
-	if !safeEndpoint(target.Host) || !safeEndpoint(target.Username) || target.Port < 1 || target.Port > 65535 {
-		return Reading{}, ErrUnreachable
-	}
 	script, err := ReadScript(target.CheckAddress)
 	if err != nil {
 		return Reading{}, err
 	}
+	stdout, err := reader.run(ctx, target, script)
+	if err != nil {
+		return Reading{}, err
+	}
+	return ParseReading(stdout), nil
+}
+
+// Prove disables the commented primary route, measures USB and LAN, then enables it again.
+// The enable step uses a context that survives cancellation of the caller's context.
+func (reader *SSHReader) Prove(ctx context.Context, target Target) (Proof, error) {
+	reading, err := reader.Read(ctx, target)
+	if err != nil {
+		return Proof{}, err
+	}
+	plan, err := PlanProof(reading, target.CheckAddress)
+	if err != nil {
+		return Proof{}, err
+	}
+	if _, err := reader.run(ctx, target, DisableScript()); err != nil {
+		return Proof{}, err
+	}
+	usbReceived, usbErr := reader.measure(ctx, target, target.CheckAddress, plan.USBInterface, "")
+	lanReceived, lanErr := reader.measure(ctx, target, target.CheckAddress, "", plan.LANAddress)
+	restoreCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
+	defer cancel()
+	if _, err := reader.run(restoreCtx, target, EnableScript()); err != nil {
+		return Proof{Outcome: OutcomeFailed, PrimaryActive: false}, ErrProofNotRestored
+	}
+	verified, err := reader.Read(restoreCtx, target)
+	if err != nil || !PrimaryIsActive(verified) {
+		return Proof{Outcome: OutcomeFailed, PrimaryActive: false}, ErrProofNotRestored
+	}
+	if usbErr != nil {
+		usbReceived = 0
+	}
+	if lanErr != nil {
+		lanReceived = 0
+	}
+	outcome := OutcomePassed
+	if usbReceived == 0 || lanReceived == 0 {
+		outcome = OutcomeFailed
+	}
+	return Proof{
+		Outcome:       outcome,
+		PrimaryActive: true,
+		USBReceived:   usbReceived,
+		LANReceived:   lanReceived,
+	}, nil
+}
+
+func (reader *SSHReader) measure(ctx context.Context, target Target, checkAddress string, iface string, source string) (int, error) {
+	script, err := PingScript(checkAddress, iface, source)
+	if err != nil {
+		return 0, err
+	}
+	stdout, err := reader.run(ctx, target, script)
+	if err != nil {
+		return 0, err
+	}
+	return parseReceived(stdout)
+}
+
+func parseReceived(output string) (int, error) {
+	for _, line := range strings.Split(output, "\n") {
+		fields := strings.Split(strings.TrimSpace(line), "\t")
+		if len(fields) >= 2 && fields[0] == "received" {
+			received, err := strconv.Atoi(fields[1])
+			if err != nil {
+				return 0, err
+			}
+			return received, nil
+		}
+	}
+	return 0, errors.New("missing measure")
+}
+
+func (reader *SSHReader) run(ctx context.Context, target Target, script string) (string, error) {
+	if target.Password == "" {
+		return "", ErrAuthenticationRejected
+	}
+	if !safeEndpoint(target.Host) || !safeEndpoint(target.Username) || target.Port < 1 || target.Port > 65535 {
+		return "", ErrUnreachable
+	}
 	if reader.KnownHostsPath == "" {
-		return Reading{}, ErrUnreachable
+		return "", ErrUnreachable
 	}
 	askpass, err := os.CreateTemp("", "borda-askpass-")
 	if err != nil {
-		return Reading{}, ErrUnreachable
+		return "", ErrUnreachable
 	}
 	askpassPath := askpass.Name()
 	defer os.Remove(askpassPath)
 	if _, err := askpass.WriteString("#!/bin/sh\nprintf '%s\\n' \"$BORDA_ROUTER_PASSWORD\"\n"); err != nil {
 		askpass.Close()
-		return Reading{}, ErrUnreachable
+		return "", ErrUnreachable
 	}
 	if err := askpass.Close(); err != nil {
-		return Reading{}, ErrUnreachable
+		return "", ErrUnreachable
 	}
 	if err := os.Chmod(askpassPath, 0o700); err != nil {
-		return Reading{}, ErrUnreachable
+		return "", ErrUnreachable
 	}
 
 	commandName := reader.Command
@@ -83,9 +162,9 @@ func (reader *SSHReader) Read(ctx context.Context, target Target) (Reading, erro
 	command.Stderr = &stderr
 	err = command.Run()
 	if err != nil {
-		return Reading{}, classifySSHError(err, stderr.String())
+		return "", classifySSHError(err, stderr.String())
 	}
-	return ParseReading(stdout.String()), nil
+	return stdout.String(), nil
 }
 
 func classifySSHError(err error, stderr string) error {

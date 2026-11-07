@@ -1,4 +1,4 @@
-import type { RegisterBody, SetupDraft } from './model';
+import type { ProofBody, RegisterBody, SetupDraft } from './model';
 
 export function buildRegisterBody(draft: SetupDraft): RegisterBody {
 	const body: RegisterBody = {
@@ -38,6 +38,10 @@ export function buildRegisterBody(draft: SetupDraft): RegisterBody {
 		body.access_token = draft.vault.accessToken;
 	}
 	return body;
+}
+
+export function buildProofBody(): ProofBody {
+	return { confirmed: true };
 }
 
 export function buildUnlockBody(passphrase: string, token: string): RegisterBody {

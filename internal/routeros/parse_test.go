@@ -1,14 +1,22 @@
 package routeros
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestShouldParseActiveRouteAndRejectWritesInScript(t *testing.T) {
 	script, err := ReadScript("192.0.2.1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(script, `/ping address="192.0.2.1"`) {
+	if !contains(script, `/ping address="192.0.2.1"`) || !contains(script, "proplist=received") {
 		t.Fatal("script missing check")
+	}
+	for _, line := range splitLines(script) {
+		if contains(line, "{") && !contains(line, "}") {
+			t.Fatalf("command block is split across lines: %s", line)
+		}
 	}
 	for _, word := range []string{" add ", " set ", " remove "} {
 		if contains(script, word) {
@@ -37,6 +45,10 @@ func TestShouldParseActiveRouteAndRejectWritesInScript(t *testing.T) {
 	if reading.CheckReceived == nil || *reading.CheckReceived != 1 {
 		t.Fatal("check")
 	}
+}
+
+func splitLines(value string) []string {
+	return strings.Split(value, "\n")
 }
 
 func contains(value string, needle string) bool {

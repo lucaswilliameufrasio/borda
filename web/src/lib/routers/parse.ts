@@ -6,6 +6,7 @@ import {
 	type FieldError,
 	type ForwardRule,
 	type Lease,
+	type ProofResult,
 	type Reserve,
 	type RouteRow,
 	type RouterSummary,
@@ -85,6 +86,22 @@ export function parseSnapshot(value: unknown): Snapshot {
 		snapshot.reserve = readReserve(reserve);
 	}
 	return snapshot;
+}
+
+export function parseProof(value: unknown): ProofResult {
+	if (!isRecord(value)) {
+		throw new ParseError('proof');
+	}
+	const outcome = requireString(value, 'outcome');
+	if (outcome !== 'passed' && outcome !== 'failed') {
+		throw new ParseError('outcome');
+	}
+	return {
+		outcome,
+		primaryActive: requireBoolean(value, 'primary_active'),
+		usbReceived: requireNumber(value, 'usb_received'),
+		lanReceived: requireNumber(value, 'lan_received'),
+	};
 }
 
 export function detailView(snapshot: Snapshot): DetailView {

@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { ParseError } from '../../src/lib/routers/model';
-import { detailView, fieldMessage, parseSnapshot } from '../../src/lib/routers/parse';
-import { buildRegisterBody } from '../../src/lib/routers/request';
+import { detailView, fieldMessage, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
+import { buildProofBody, buildRegisterBody } from '../../src/lib/routers/request';
 
 it('Should show an empty route when no default is active', () => {
 	const snapshot = parseSnapshot({
@@ -100,4 +100,24 @@ it('Should read a field message by name', () => {
 
 it('Should reject a snapshot that is not an object', () => {
 	expect(() => parseSnapshot([])).toThrow(ParseError);
+});
+
+it('Should build a confirmed proof without a secret field', () => {
+	const body = buildProofBody();
+	expect(body.confirmed).toBe(true);
+	expect(Object.hasOwn(body, 'router_password')).toBe(false);
+	expect(Object.hasOwn(body, 'vault_passphrase')).toBe(false);
+});
+
+it('Should read a restored proof that did not pass', () => {
+	const proof = parseProof({
+		outcome: 'failed',
+		primary_active: true,
+		usb_received: 0,
+		lan_received: 1,
+	});
+	expect(proof.outcome).toBe('failed');
+	expect(proof.primaryActive).toBe(true);
+	expect(proof.usbReceived).toBe(0);
+	expect(proof.lanReceived).toBe(1);
 });

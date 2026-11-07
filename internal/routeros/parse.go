@@ -23,11 +23,16 @@ func ParseReading(output string) Reading {
 		case "route":
 			if len(fields) >= 5 {
 				distance, _ := strconv.Atoi(fields[3])
+				comment := ""
+				if len(fields) >= 6 {
+					comment = fields[5]
+				}
 				reading.Routes = append(reading.Routes, Route{
 					Gateway:       fields[1],
 					Active:        fields[2] == "true",
 					Distance:      distance,
 					InterfaceName: interfaceFromImmediate(fields[4], fields[1]),
+					Comment:       comment,
 				})
 			}
 		case "forward":

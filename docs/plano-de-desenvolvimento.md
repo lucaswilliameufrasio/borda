@@ -93,7 +93,7 @@ A pessoa aprova o agent na LAN. O hub passa a receber retrato e evento. A creden
 - Assistente. Leitura sobre o retrato filtrado e uma lista fechada de propostas. A escrita passa pelo comando, com confirmação.
 - Comando. Idempotência por comentário estável. Recusa comando fora da lista. Mostra o que vai mudar antes de aplicar.
 
-Os comentários estáveis são o contrato das escritas. Os nomes públicos ainda não estão fechados. A leitura da fatia 1 não depende deles: ela mostra a rota padrão que o roteador já tem.
+Os comentários estáveis são o contrato das escritas. A prova só pode desabilitar a rota padrão cujo comentário é `borda-primary`. Sem esse comentário, com mais de uma rota assim, ou sem USB em pé, forward da LAN para essa USB e um endereço de LAN, a prova não começa e nada é desabilitado. O comentário de uma WAN cadastrada ainda não está fechado. A leitura da fatia 1 não depende desses comentários: ela mostra a rota padrão que o roteador já tem.
 
 ## Observabilidade
 
@@ -107,7 +107,7 @@ Um gráfico de vazão da interface pode entrar depois do evento de troca. Sem o 
 
 ## Fatias
 
-Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A jornada com um RouterOS de laboratório ainda não foi executada. As fatias 2 a 6 não começaram.
+Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A fatia 2 também. As duas foram exercitadas num CHR RouterOS 7.25.1 de laboratório, com SSH só em 127.0.0.1. A leitura mostrou a identidade `lab`, a rota padrão ativa por `ether1` e a checagem `1.1.1.1` respondendo. A prova confirmada respondeu 412 `PROOF_NOT_READY` com motivo `missing_primary`: esse CHR não tem LTE e a rota do DHCP não carrega o comentário `borda-primary`. A rota permaneceu ativa. AC-08 não fecha neste CHR, porque não há USB para medir. Rota ausente, sessão falha e dois agents seguem verificados só no roteador falso. As fatias 3 a 6 não começaram.
 
 ### 1. Setup e caminho ativo, só leitura
 
@@ -150,9 +150,9 @@ O hub recebe retrato e evento. A senha não está no hub. Um comando de escrita 
 
 ## Ordem e verificação
 
-A fatia 1 é a única que responde "por onde a casa está saindo" sem escrever no roteador. As seguintes não começam antes de a anterior estar verificada na jornada real, com um roteador de laboratório ou com confirmação explícita no roteador da casa.
+A jornada de laboratório fecha a leitura da fatia 1 neste CHR e a recusa da prova quando a rota comentada ou a USB não existem. Ela não fecha a medida USB. Um teste automatizado cobre o contrato de cada módulo com um roteador falso. Teste verde sem essa jornada não substitui o que o CHR mostrou.
 
-Um teste automatizado cobre o contrato de cada módulo com um roteador falso. A jornada de ponta a ponta usa um RouterOS de laboratório. Teste verde sem essa jornada não fecha o aceite.
+O script de leitura precisou de um ajuste encontrado nessa jornada. O RouterOS executa o payload SSH linha a linha, então cada consulta fica numa linha só. No RouterOS 7, o ping com `count=1` só devolve `received` quando o script pede `proplist=received`.
 
 ## Decisões fechadas
 
@@ -170,4 +170,4 @@ Um teste automatizado cobre o contrato de cada módulo com um roteador falso. A 
 
 ## O que este plano não autoriza
 
-A leitura não aponta para um roteador de produção até haver um laboratório ou uma confirmação explícita. As decisões em aberto não bloqueiam a fatia 1.
+Esta jornada não autoriza o roteador da casa. As decisões em aberto não bloqueiam a leitura.

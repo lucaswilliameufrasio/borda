@@ -102,6 +102,17 @@ export type SetupDraft = {
 
 export type RegisterBody = Record<string, string | number>;
 
+export type ProofResult = {
+	outcome: 'passed' | 'failed';
+	primaryActive: boolean;
+	usbReceived: number;
+	lanReceived: number;
+};
+
+export type ProofBody = {
+	confirmed: true;
+};
+
 export class ParseError extends Error {
 	readonly field: string;
 

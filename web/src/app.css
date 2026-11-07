@@ -169,6 +169,12 @@ button:disabled {
 	cursor: progress;
 }
 
+.button-quiet {
+	background: transparent;
+	color: var(--brass);
+	border: 1px solid var(--brass);
+}
+
 .router-list {
 	list-style: none;
 	padding: 0;

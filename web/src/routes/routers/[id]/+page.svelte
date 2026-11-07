@@ -132,6 +132,7 @@
 				</p>
 			{/if}
 		</div>
+		<a class="button button-quiet" href={resolve('/routers/[id]/proof', { id: data.state.router.id })}>{m.proofNav()}</a>
 	</div>
 	{#if data.state.view.type === 'empty-route'}
 		<p class="banner banner-locked">{m.noDefaultRoute()}</p>

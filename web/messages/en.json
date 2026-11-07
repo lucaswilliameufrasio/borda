@@ -64,5 +64,15 @@
 	"columnAddress": "Address",
 	"columnMac": "MAC",
 	"columnHostName": "Name",
-	"vaultKind": "Vault"
+	"vaultKind": "Vault",
+	"proofNav": "Prove the USB exit",
+	"proofTitle": "USB exit proof",
+	"proofWarning": "The house loses the primary WAN for a few seconds. Only the route commented borda-primary is disabled, and it is enabled again at the end.",
+	"proofConfirm": "Confirm and measure",
+	"proofRunning": "Measuring",
+	"proofPassed": "The measure came back and the primary route is active.",
+	"proofFailed": "The proof did not pass. The primary route is active.",
+	"proofNotRestored": "The primary route did not become active again.",
+	"proofUsb": "Through USB",
+	"proofLan": "Through the LAN"
 }

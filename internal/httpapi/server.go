@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/lucaswilliameufrasio/borda/internal/hub"
+	"github.com/lucaswilliameufrasio/borda/internal/routeros"
 	"github.com/lucaswilliameufrasio/borda/internal/secret"
 )
 
@@ -37,6 +38,7 @@ func New(store *hub.Store, logger *log.Logger, origins []string) *Server {
 	server.mux.HandleFunc("GET /v1/routers/{id}", server.getRouter)
 	server.mux.HandleFunc("GET /v1/routers/{id}/snapshot", server.snapshot)
 	server.mux.HandleFunc("POST /v1/routers/{id}/session", server.unlock)
+	server.mux.HandleFunc("POST /v1/routers/{id}/proof", server.proof)
 	return server
 }
 
@@ -134,6 +136,41 @@ func (server *Server) snapshot(response http.ResponseWriter, request *http.Reque
 	writeJSON(response, http.StatusOK, snapshot)
 }
 
+func (server *Server) proof(response http.ResponseWriter, request *http.Request) {
+	var body proofBody
+	if err := decodeJSON(response, request, &body); err != nil {
+		writeDecodeError(response, err)
+		return
+	}
+	proof, err := server.store.Prove(request.Context(), request.PathValue("id"), body.Confirmed)
+	if err != nil {
+		var notReady *routeros.ProofError
+		if errors.As(err, &notReady) {
+			writeJSON(response, http.StatusPreconditionFailed, map[string]any{
+				"message":    "A prova não começou e a rota primária não foi alterada.",
+				"error_code": "PROOF_NOT_READY",
+				"extra":      map[string]string{"reason": notReady.Reason},
+			})
+			return
+		}
+		if errors.Is(err, routeros.ErrProofNotRestored) {
+			writeJSON(response, http.StatusInternalServerError, map[string]any{
+				"message":    "A rota primária não voltou a ficar ativa.",
+				"error_code": "PROOF_NOT_RESTORED",
+			})
+			return
+		}
+		writeStoreError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, map[string]any{
+		"outcome":        proof.Outcome,
+		"primary_active": proof.PrimaryActive,
+		"usb_received":   proof.USBReceived,
+		"lan_received":   proof.LANReceived,
+	})
+}
+
 func (server *Server) unlock(response http.ResponseWriter, request *http.Request) {
 	var body unlockBody
 	if err := decodeJSON(response, request, &body); err != nil {
@@ -168,6 +205,10 @@ type registerBody struct {
 type unlockBody struct {
 	VaultPassphrase string `json:"vault_passphrase"`
 	AccessToken     string `json:"access_token"`
+}
+
+type proofBody struct {
+	Confirmed bool `json:"confirmed"`
 }
 
 type errorBody struct {

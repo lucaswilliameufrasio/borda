@@ -1,6 +1,6 @@
-import { ApiError, type RouterSummary, type SetupDraft, type Snapshot } from './model';
-import { parseApiError, parseRouter, parseRouterList, parseSnapshot } from './parse';
-import { buildRegisterBody, buildUnlockBody } from './request';
+import { ApiError, type ProofResult, type RouterSummary, type SetupDraft, type Snapshot } from './model';
+import { parseApiError, parseProof, parseRouter, parseRouterList, parseSnapshot } from './parse';
+import { buildProofBody, buildRegisterBody, buildUnlockBody } from './request';
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -26,10 +26,19 @@ export function createClient(baseUrl: string, fetchFn: FetchLike) {
 		async unlock(id: string, passphrase: string, token: string): Promise<void> {
 			await requestJson(fetchFn, 'POST', `${root}/v1/routers/${encodeURIComponent(id)}/session`, buildUnlockBody(passphrase, token));
 		},
+		async prove(id: string): Promise<ProofResult> {
+			const payload = await requestJson(fetchFn, 'POST', `${root}/v1/routers/${encodeURIComponent(id)}/proof`, buildProofBody());
+			return parseProof(payload);
+		},
 	};
 }
 
-async function requestJson(fetchFn: FetchLike, method: string, url: string, body?: Record<string, string | number>): Promise<unknown> {
+async function requestJson(
+	fetchFn: FetchLike,
+	method: string,
+	url: string,
+	body?: Record<string, string | number | boolean>,
+): Promise<unknown> {
 	const headers: Record<string, string> = { accept: 'application/json' };
 	let encoded: string | undefined;
 	if (body !== undefined) {

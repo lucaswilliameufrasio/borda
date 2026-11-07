@@ -31,6 +31,7 @@ type Route struct {
 	Active        bool
 	Distance      int
 	InterfaceName string
+	Comment       string
 }
 
 // ForwardRule is one forward filter rule.
@@ -72,7 +73,27 @@ type Reading struct {
 	CheckReceived   *int
 }
 
-// Reader performs named read operations. It does not change the router.
+// PrimaryComment is the only route comment the USB proof may disable.
+const PrimaryComment = "borda-primary"
+
+// Proof is the result of one USB proof after the primary route is restored,
+// or the state observed when restoration itself fails.
+type Proof struct {
+	Outcome       string
+	PrimaryActive bool
+	USBReceived   int
+	LANReceived   int
+}
+
+const (
+	OutcomePassed = "passed"
+	OutcomeFailed = "failed"
+)
+
+// Reader performs named router operations.
+// Read does not change the router. Prove may disable only the commented primary route,
+// and it enables that route again before it returns.
 type Reader interface {
 	Read(ctx context.Context, target Target) (Reading, error)
+	Prove(ctx context.Context, target Target) (Proof, error)
 }

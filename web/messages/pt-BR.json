@@ -64,5 +64,15 @@
 	"columnAddress": "Endereço",
 	"columnMac": "MAC",
 	"columnHostName": "Nome",
-	"vaultKind": "Cofre"
+	"vaultKind": "Cofre",
+	"proofNav": "Provar a saída USB",
+	"proofTitle": "Prova da saída USB",
+	"proofWarning": "A casa fica sem a WAN primária por alguns segundos. Só a rota comentada borda-primary é desabilitada, e ela é reabilitada ao final.",
+	"proofConfirm": "Confirmar e medir",
+	"proofRunning": "Medindo",
+	"proofPassed": "A medida voltou e a rota primária está ativa.",
+	"proofFailed": "A prova não passou. A rota primária está ativa.",
+	"proofNotRestored": "A rota primária não voltou a ficar ativa.",
+	"proofUsb": "Pela USB",
+	"proofLan": "Pela LAN"
 }

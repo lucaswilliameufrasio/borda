@@ -146,6 +146,81 @@ func TestShouldAllowOnlyLocalhostCORS(t *testing.T) {
 	}
 }
 
+func TestShouldLeaveThePrimaryRouteUntouchedWithoutConfirmation(t *testing.T) {
+	password := "plane-router-secret"
+	passphrase := "plane-vault-secret"
+	logs := &bytes.Buffer{}
+	dir := t.TempDir()
+	memory := routeros.NewMemory()
+	memory.Set("ready.example", "identity\tExample\t7.0\n"+
+		"route\t192.0.2.1\ttrue\t1\t192.0.2.1%ether1\tborda-primary\n"+
+		"forward\taccept\treserve\tbridge\tlte1\n"+
+		"address\tbridge\t192.0.2.10/24\n"+
+		"address\tlte1\t192.0.2.50/32\n"+
+		"lte\tlte1\ttrue\n")
+	memory.Set("other.example", "identity\tOther\t7.0\n")
+	store, err := hub.Open(dir, secret.NewKeeper(dir, secret.NewMemoryKeyring(), nil), memory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := New(store, log.New(logs, "", 0), []string{"http://127.0.0.1:5173"}).Handler()
+	created := postJSON(handler, "/v1/routers", `{
+		"name": "Prova",
+		"host": "ready.example",
+		"username": "reader",
+		"check_address": "192.0.2.1",
+		"vault_kind": "file",
+		"router_password": "`+password+`",
+		"vault_passphrase": "`+passphrase+`"
+	}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", created.Code, created.Body.String())
+	}
+	var router map[string]any
+	if err := json.Unmarshal(created.Body.Bytes(), &router); err != nil {
+		t.Fatal(err)
+	}
+	id, ok := router["id"].(string)
+	if !ok || id == "" {
+		t.Fatal("missing id")
+	}
+	refused := postJSON(handler, "/v1/routers/"+id+"/proof", `{"confirmed":false}`)
+	if refused.Code != http.StatusUnprocessableEntity || !strings.Contains(refused.Body.String(), "validation_errors") {
+		t.Fatalf("refused %d %s", refused.Code, refused.Body.String())
+	}
+	if len(memory.ProofCalls("ready.example")) != 0 {
+		t.Fatal("unconfirmed proof wrote to the router")
+	}
+	passed := postJSON(handler, "/v1/routers/"+id+"/proof", `{"confirmed":true}`)
+	if passed.Code != http.StatusOK {
+		t.Fatalf("proof %d %s", passed.Code, passed.Body.String())
+	}
+	assertNoSecret(t, passed.Body.String(), password, passphrase)
+	assertNoNull(t, passed.Body.Bytes())
+	if !strings.Contains(passed.Body.String(), `"outcome":"passed"`) || !strings.Contains(passed.Body.String(), `"primary_active":true`) {
+		t.Fatalf("body %s", passed.Body.String())
+	}
+	if strings.Contains(logs.String(), password) || strings.Contains(logs.String(), passphrase) {
+		t.Fatal("log includes a secret")
+	}
+	if len(memory.ProofCalls("other.example")) != 0 {
+		t.Fatal("the other router was touched")
+	}
+
+	memory.FailProofMeasure("ready.example")
+	failed := postJSON(handler, "/v1/routers/"+id+"/proof", `{"confirmed":true}`)
+	if failed.Code != http.StatusOK || !strings.Contains(failed.Body.String(), `"outcome":"failed"`) || !strings.Contains(failed.Body.String(), `"primary_active":true`) {
+		t.Fatalf("failed measure %d %s", failed.Code, failed.Body.String())
+	}
+
+	memory.FailProofRestore("ready.example")
+	stuck := postJSON(handler, "/v1/routers/"+id+"/proof", `{"confirmed":true}`)
+	if stuck.Code != http.StatusInternalServerError || !strings.Contains(stuck.Body.String(), "PROOF_NOT_RESTORED") {
+		t.Fatalf("restore %d %s", stuck.Code, stuck.Body.String())
+	}
+	assertNoSecret(t, stuck.Body.String(), password, passphrase)
+}
+
 func testHandler(t *testing.T, logs io.Writer) http.Handler {
 	t.Helper()
 	dir := t.TempDir()
