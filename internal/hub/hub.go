@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/lucaswilliameufrasio/borda/internal/routeros"
 	"github.com/lucaswilliameufrasio/borda/internal/secret"
@@ -83,13 +84,17 @@ type fileState struct {
 
 // Store is the local router registry. Passwords stay in the keeper.
 type Store struct {
-	dir    string
-	path   string
-	keeper *secret.Keeper
-	reader routeros.Reader
+	dir         string
+	path        string
+	historyPath string
+	keeper      *secret.Keeper
+	reader      routeros.Reader
+	now         func() time.Time
 
-	mu      sync.Mutex
-	routers []storedRouter
+	mu           sync.Mutex
+	routers      []storedRouter
+	observations map[string]pathObservation
+	events       []storedEvent
 }
 
 func Open(dir string, keeper *secret.Keeper, reader routeros.Reader) (*Store, error) {
@@ -97,13 +102,19 @@ func Open(dir string, keeper *secret.Keeper, reader routeros.Reader) (*Store, er
 		return nil, err
 	}
 	store := &Store{
-		dir:     dir,
-		path:    filepath.Join(dir, "routers.json"),
-		keeper:  keeper,
-		reader:  reader,
-		routers: []storedRouter{},
+		dir:          dir,
+		path:         filepath.Join(dir, "routers.json"),
+		historyPath:  filepath.Join(dir, "events.json"),
+		keeper:       keeper,
+		reader:       reader,
+		routers:      []storedRouter{},
+		observations: map[string]pathObservation{},
+		events:       []storedEvent{},
 	}
 	if err := store.load(); err != nil {
+		return nil, err
+	}
+	if err := store.loadHistory(); err != nil {
 		return nil, err
 	}
 	return store, nil
@@ -210,7 +221,11 @@ func (store *Store) Snapshot(ctx context.Context, id string) (Snapshot, error) {
 		snapshot.Session = sessionFromReader(err)
 		return snapshot, nil
 	}
-	return fillConnected(snapshot, router, reading), nil
+	filled := fillConnected(snapshot, router, reading)
+	if err := store.notePath(router.ID, filled); err != nil {
+		return Snapshot{}, err
+	}
+	return filled, nil
 }
 
 // Prove runs the USB proof after an explicit confirmation.
@@ -230,13 +245,31 @@ func (store *Store) Prove(ctx context.Context, id string, confirmed bool) (route
 	if err != nil {
 		return routeros.Proof{}, err
 	}
-	return store.reader.Prove(ctx, routeros.Target{
+	started := store.clock()
+	proof, err := store.reader.Prove(ctx, routeros.Target{
 		Host:         router.Host,
 		Port:         router.SSHPort,
 		Username:     router.Username,
 		Password:     password,
 		CheckAddress: router.CheckAddress,
 	})
+	if err != nil {
+		var notReady *routeros.ProofError
+		if errors.As(err, &notReady) {
+			return proof, err
+		}
+		if !errors.Is(err, routeros.ErrProofNotRestored) {
+			return proof, err
+		}
+		if noteErr := store.noteProof(router.ID, started, false); noteErr != nil {
+			return proof, noteErr
+		}
+		return proof, err
+	}
+	if noteErr := store.noteProof(router.ID, started, true); noteErr != nil {
+		return proof, noteErr
+	}
+	return proof, nil
 }
 
 func (store *Store) find(id string) (storedRouter, error) {

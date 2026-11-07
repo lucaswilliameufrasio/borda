@@ -7,6 +7,8 @@ import {
 	type FieldError,
 	type ForwardRule,
 	type Lease,
+	type PathEvent,
+	type PathReason,
 	type ProofResult,
 	type Reserve,
 	type RouteRow,
@@ -254,6 +256,31 @@ function readDevices(value: Record<string, unknown>): Device[] {
 		devices.push(device);
 	}
 	return devices;
+}
+
+export function parseEvents(value: unknown): PathEvent[] {
+	if (!Array.isArray(value)) {
+		throw new ParseError('events');
+	}
+	const events: PathEvent[] = [];
+	for (const item of value) {
+		if (!isRecord(item)) {
+			throw new ParseError('events');
+		}
+		events.push({
+			id: requireString(item, 'id'),
+			at: requireString(item, 'at'),
+			reason: readReason(requireString(item, 'reason')),
+		});
+	}
+	return events;
+}
+
+function readReason(value: string): PathReason {
+	if (value === 'check_failed' || value === 'proof_requested' || value === 'route_restored') {
+		return value;
+	}
+	throw new ParseError('reason');
 }
 
 export function findDevice(devices: Device[], id: string): Device | undefined {

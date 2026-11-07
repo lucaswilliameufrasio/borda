@@ -37,6 +37,7 @@ func New(store *hub.Store, logger *log.Logger, origins []string) *Server {
 	server.mux.HandleFunc("POST /v1/routers", server.createRouter)
 	server.mux.HandleFunc("GET /v1/routers/{id}", server.getRouter)
 	server.mux.HandleFunc("GET /v1/routers/{id}/snapshot", server.snapshot)
+	server.mux.HandleFunc("GET /v1/routers/{id}/events", server.events)
 	server.mux.HandleFunc("POST /v1/routers/{id}/session", server.unlock)
 	server.mux.HandleFunc("POST /v1/routers/{id}/proof", server.proof)
 	return server
@@ -134,6 +135,15 @@ func (server *Server) snapshot(response http.ResponseWriter, request *http.Reque
 		return
 	}
 	writeJSON(response, http.StatusOK, snapshot)
+}
+
+func (server *Server) events(response http.ResponseWriter, request *http.Request) {
+	events, err := server.store.Events(request.PathValue("id"))
+	if err != nil {
+		writeStoreError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, events)
 }
 
 func (server *Server) proof(response http.ResponseWriter, request *http.Request) {

@@ -81,5 +81,14 @@
 	"deviceExit": "Exit path",
 	"deviceExitNote": "Traffic from this device follows the router's active path.",
 	"deviceMissing": "This device is not in the current reading.",
-	"columnSeenOn": "Seen on"
+	"columnSeenOn": "Seen on",
+	"historyNav": "Changes",
+	"historyTitle": "Path changes",
+	"historyEmpty": "No path change recorded.",
+	"historyNote": "This history stays in the hub. The router is not the archive.",
+	"columnWhen": "When",
+	"columnReason": "Reason",
+	"reasonCheckFailed": "The check failed.",
+	"reasonProofRequested": "The proof was requested.",
+	"reasonRouteRestored": "The route was enabled again."
 }

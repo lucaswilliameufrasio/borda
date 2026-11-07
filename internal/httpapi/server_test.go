@@ -65,6 +65,16 @@ func TestShouldCreateRouterWithoutReturningThePassword(t *testing.T) {
 	if !strings.Contains(snapshot.Body.String(), `"id":"aabbccddeeff"`) || !strings.Contains(snapshot.Body.String(), `"name":"phone"`) {
 		t.Fatal("snapshot missing the lease device")
 	}
+	events := get(handler, "/v1/routers/"+id+"/events")
+	if events.Code != http.StatusOK || strings.TrimSpace(events.Body.String()) != "[]" {
+		t.Fatalf("events %d %s", events.Code, events.Body.String())
+	}
+	assertNoSecret(t, events.Body.String(), password, passphrase)
+	assertNoNull(t, events.Body.Bytes())
+	missingEvents := get(handler, "/v1/routers/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/events")
+	if missingEvents.Code != http.StatusNotFound || !strings.Contains(missingEvents.Body.String(), `"error_code":"ROUTER_NOT_FOUND"`) {
+		t.Fatalf("missing events %d %s", missingEvents.Code, missingEvents.Body.String())
+	}
 
 	other := postJSON(handler, "/v1/routers", `{
 		"name": "Vazio",

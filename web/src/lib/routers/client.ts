@@ -1,5 +1,5 @@
-import { ApiError, type ProofResult, type RouterSummary, type SetupDraft, type Snapshot } from './model';
-import { parseApiError, parseProof, parseRouter, parseRouterList, parseSnapshot } from './parse';
+import { ApiError, type PathEvent, type ProofResult, type RouterSummary, type SetupDraft, type Snapshot } from './model';
+import { parseApiError, parseEvents, parseProof, parseRouter, parseRouterList, parseSnapshot } from './parse';
 import { buildProofBody, buildRegisterBody, buildUnlockBody } from './request';
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -22,6 +22,10 @@ export function createClient(baseUrl: string, fetchFn: FetchLike) {
 		async snapshot(id: string): Promise<Snapshot> {
 			const payload = await requestJson(fetchFn, 'GET', `${root}/v1/routers/${encodeURIComponent(id)}/snapshot`);
 			return parseSnapshot(payload);
+		},
+		async events(id: string): Promise<PathEvent[]> {
+			const payload = await requestJson(fetchFn, 'GET', `${root}/v1/routers/${encodeURIComponent(id)}/events`);
+			return parseEvents(payload);
 		},
 		async unlock(id: string, passphrase: string, token: string): Promise<void> {
 			await requestJson(fetchFn, 'POST', `${root}/v1/routers/${encodeURIComponent(id)}/session`, buildUnlockBody(passphrase, token));

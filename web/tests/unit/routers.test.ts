@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { ParseError } from '../../src/lib/routers/model';
-import { detailView, fieldMessage, findDevice, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
+import { detailView, fieldMessage, findDevice, parseEvents, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
 import { buildProofBody, buildRegisterBody } from '../../src/lib/routers/request';
 
 it('Should show an empty route when no default is active', () => {
@@ -94,6 +94,18 @@ it('Should find a device by mac id', () => {
 	expect(findDevice(snapshot.devices, 'aabbccddeeff')?.seenOn).toBe('bridge');
 	expect(findDevice(snapshot.devices, '000000000000')).toBeUndefined();
 	expect(JSON.stringify(snapshot).includes('router_password')).toBe(false);
+});
+
+it('Should keep path events in the order the hub returned', () => {
+	const events = parseEvents([
+		{ id: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', at: '2026-11-07T15:04:00Z', reason: 'route_restored' },
+		{ id: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', at: '2026-11-07T15:03:00Z', reason: 'proof_requested' },
+	]);
+	expect(events.map((event) => event.reason)).toEqual(['route_restored', 'proof_requested']);
+	expect(parseEvents([])).toEqual([]);
+	expect(() => parseEvents([{ id: 'cccccccccccccccccccccccccccccccc', at: '2026-11-07T15:00:00Z', reason: 'guessed' }])).toThrow(
+		ParseError,
+	);
 });
 
 it('Should build a file vault body without a remote token', () => {

@@ -96,7 +96,12 @@
 	{@const failed = data.state.view}
 	{@const router = data.state.router}
 	<div class="page-head">
-		<h2>{router.name}</h2>
+		<div>
+			<h2>{router.name}</h2>
+		</div>
+		<div class="page-actions">
+			<a class="button button-quiet" href={resolve('/routers/[id]/history', { id: router.id })}>{m.historyNav()}</a>
+		</div>
 	</div>
 	<p class={sessionClass(failed.session)}>{sessionText(failed.session)}</p>
 	{#if failed.session === 'locked' && (router.vaultKind === 'file' || router.vaultKind === 'ciphera' || router.vaultKind === 'infisical')}
@@ -132,7 +137,10 @@
 				</p>
 			{/if}
 		</div>
-		<a class="button button-quiet" href={resolve('/routers/[id]/proof', { id: data.state.router.id })}>{m.proofNav()}</a>
+		<div class="page-actions">
+			<a class="button button-quiet" href={resolve('/routers/[id]/history', { id: data.state.router.id })}>{m.historyNav()}</a>
+			<a class="button button-quiet" href={resolve('/routers/[id]/proof', { id: data.state.router.id })}>{m.proofNav()}</a>
+		</div>
 	</div>
 	{#if data.state.view.type === 'empty-route'}
 		<p class="banner banner-locked">{m.noDefaultRoute()}</p>

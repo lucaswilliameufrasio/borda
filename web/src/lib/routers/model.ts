@@ -122,6 +122,14 @@ export type ProofBody = {
 	confirmed: true;
 };
 
+export type PathReason = 'check_failed' | 'proof_requested' | 'route_restored';
+
+export type PathEvent = {
+	id: string;
+	at: string;
+	reason: PathReason;
+};
+
 export class ParseError extends Error {
 	readonly field: string;
 

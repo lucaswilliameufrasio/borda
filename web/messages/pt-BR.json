@@ -81,5 +81,14 @@
 	"deviceExit": "Caminho de saída",
 	"deviceExitNote": "O tráfego deste aparelho segue o caminho ativo do roteador.",
 	"deviceMissing": "Este aparelho não está na leitura atual.",
-	"columnSeenOn": "Visto em"
+	"columnSeenOn": "Visto em",
+	"historyNav": "Trocas",
+	"historyTitle": "Trocas de caminho",
+	"historyEmpty": "Nenhuma troca registrada.",
+	"historyNote": "Este histórico fica no hub. O roteador não é o arquivo.",
+	"columnWhen": "Quando",
+	"columnReason": "Motivo",
+	"reasonCheckFailed": "A checagem falhou.",
+	"reasonProofRequested": "A prova foi pedida.",
+	"reasonRouteRestored": "A rota foi reabilitada."
 }

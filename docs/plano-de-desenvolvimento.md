@@ -107,7 +107,7 @@ Um gráfico de vazão da interface pode entrar depois do evento de troca. Sem o 
 
 ## Fatias
 
-Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A fatia 2 também. As duas foram exercitadas num CHR RouterOS 7.25.1 de laboratório, com SSH só em 127.0.0.1. A leitura mostrou a identidade `lab`, a rota padrão ativa por `ether1` e a checagem `1.1.1.1` respondendo. A prova confirmada respondeu 412 `PROOF_NOT_READY` com motivo `missing_primary`: esse CHR não tem LTE e a rota do DHCP não carrega o comentário `borda-primary`. A rota permaneceu ativa. AC-08 não fecha neste CHR, porque não há USB para medir. Rota ausente, sessão falha e dois agents seguem verificados só no roteador falso. A fatia 3 lista os aparelhos da leitura atual, juntando DHCP, ARP e neighbor pelo MAC. No mesmo CHR, o único aparelho foi o gateway visto por ARP em `ether1`, sem nome anunciado e sem lease. Abrir esse aparelho mostrou o endereço e o caminho ativo, e a rota padrão continuou ativa. Neighbor e lease nesse CHR estavam vazios; a junção deles ficou no teste. Não há amostra guardada, então visto há pouco e ausente continuam de fora. As fatias 4 a 6 não começaram.
+Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A fatia 2 também. As duas foram exercitadas num CHR RouterOS 7.25.1 de laboratório, com SSH só em 127.0.0.1. A leitura mostrou a identidade `lab`, a rota padrão ativa por `ether1` e a checagem `1.1.1.1` respondendo. A prova confirmada respondeu 412 `PROOF_NOT_READY` com motivo `missing_primary`: esse CHR não tem LTE e a rota do DHCP não carrega o comentário `borda-primary`. A rota permaneceu ativa. AC-08 não fecha neste CHR, porque não há USB para medir. Rota ausente, sessão falha e dois agents seguem verificados só no roteador falso. A fatia 3 lista os aparelhos da leitura atual, juntando DHCP, ARP e neighbor pelo MAC. No mesmo CHR, o único aparelho foi o gateway visto por ARP em `ether1`, sem nome anunciado e sem lease. Abrir esse aparelho mostrou o endereço e o caminho ativo, e a rota padrão continuou ativa. Neighbor e lease nesse CHR estavam vazios; a junção deles ficou no teste. Não há amostra guardada, então visto há pouco e ausente continuam de fora. A fatia 4 grava a troca de caminho no hub, com hora e um destes motivos: a checagem falhou, a prova foi pedida, ou a rota foi reabilitada. A primeira leitura conectada só marca o caminho e não cria evento. Troca com a checagem ainda respondendo fica só como observação, sem motivo inventado. Prova recusada não entra. Se a reabilitação falha, fica só o pedido da prova. Listar o histórico não consulta o roteador. Nada é apagado enquanto a decisão de guarda estiver aberta. No CHR, com o cofre fechado, a tela de trocas abriu vazia: só o cadastro e a lista de eventos, sem retrato e sem escrita. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio. Os três motivos ficaram no teste, porque esse CHR não trocou de caminho e a prova não começa. AC-08 continua aberto. As fatias 5 e 6 não começaram.
 
 ### 1. Setup e caminho ativo, só leitura
 
@@ -144,7 +144,13 @@ A pessoa abre um aparelho da leitura atual e vê endereço, nome anunciado e o c
 
 ### 4. Histórico de troca de caminho
 
-Cada troca registrada no hub tem hora e motivo. O roteador não é consultado como arquivo desse histórico.
+Cada troca registrada no hub tem hora e motivo. O roteador não é consultado como arquivo desse histórico. A tela abre com o cofre fechado. A primeira leitura conectada não vira evento. Sem tempo de guarda decidido, o hub não apaga evento.
+
+| ID | Resultado observável |
+| --- | --- |
+| AC-13 | Uma troca guardada no hub tem hora e um motivo da lista: checagem falhou, prova pedida ou rota reabilitada. A lista não lê o roteador e não mostra senha. |
+| AC-14 | Abrir o histórico não altera o firewall nem a rota. |
+| AC-15 | Leitura inicial, prova que não começou e troca com a checagem respondendo não criam motivo. Falha ao reabilitar não registra a rota como reabilitada. |
 
 ### 5. Assistente em modo proposta
 

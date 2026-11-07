@@ -124,6 +124,13 @@ h1 {
 	margin-bottom: 1rem;
 }
 
+.page-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
 h2 {
 	margin: 0;
 	font-size: 1.55rem;
