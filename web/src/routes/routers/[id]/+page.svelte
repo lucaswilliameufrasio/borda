@@ -102,6 +102,7 @@
 		<div class="page-actions">
 			<a class="button button-quiet" href={resolve('/routers/[id]/history', { id: router.id })}>{m.historyNav()}</a>
 			<a class="button button-quiet" href={resolve('/routers/[id]/assistant', { id: router.id })}>{m.assistantNav()}</a>
+			<a class="button button-quiet" href={resolve('/routers/[id]/hub', { id: router.id })}>{m.hubNav()}</a>
 		</div>
 	</div>
 	<p class={sessionClass(failed.session)}>{sessionText(failed.session)}</p>
@@ -141,6 +142,7 @@
 		<div class="page-actions">
 			<a class="button button-quiet" href={resolve('/routers/[id]/history', { id: data.state.router.id })}>{m.historyNav()}</a>
 			<a class="button button-quiet" href={resolve('/routers/[id]/assistant', { id: data.state.router.id })}>{m.assistantNav()}</a>
+			<a class="button button-quiet" href={resolve('/routers/[id]/hub', { id: data.state.router.id })}>{m.hubNav()}</a>
 			<a class="button button-quiet" href={resolve('/routers/[id]/proof', { id: data.state.router.id })}>{m.proofNav()}</a>
 		</div>
 	</div>

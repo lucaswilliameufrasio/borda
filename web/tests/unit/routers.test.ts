@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { ParseError } from '../../src/lib/routers/model';
-import { detailView, fieldMessage, findDevice, parseAssistant, parseEvents, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
+import { detailView, fieldMessage, findDevice, parseAssistant, parseEvents, parseHub, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
 import { buildProofBody, buildRegisterBody } from '../../src/lib/routers/request';
 
 it('Should show an empty route when no default is active', () => {
@@ -122,6 +122,33 @@ it('Should keep an assistant proposal inside the closed list', () => {
 	expect(missing.proposal).toBeUndefined();
 	expect(() => parseAssistant({ kind: 'proposal', text: 'fora', proposal: { action: 'export', summary: 'no' } })).toThrow(ParseError);
 	expect(() => parseAssistant({ kind: 'guessed', text: 'fora' })).toThrow(ParseError);
+});
+
+it('Should keep the hub portrait free of the router password', () => {
+	const waiting = parseHub({ linked: false, name: 'Laboratório' });
+	expect(waiting.linked).toBe(false);
+	const linked = parseHub({
+		linked: true,
+		name: 'Laboratório',
+		password: 'should-not-leak',
+		username: 'reader',
+		portrait: {
+			session: 'locked',
+			has_active_route: false,
+			lease_count: 0,
+			device_count: 0,
+			route_count: 0,
+		},
+		events: [],
+	});
+	expect(linked.linked).toBe(true);
+	if (linked.linked) {
+		expect(linked.portrait.session).toBe('locked');
+		expect(linked.events).toEqual([]);
+	}
+	expect(JSON.stringify(linked).includes('should-not-leak')).toBe(false);
+	expect(JSON.stringify(linked).includes('reader')).toBe(false);
+	expect(() => parseHub({ linked: false, name: 'Laboratório', events: [] })).toThrow(ParseError);
 });
 
 it('Should build a file vault body without a remote token', () => {

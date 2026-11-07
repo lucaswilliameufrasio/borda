@@ -98,5 +98,17 @@
 	"assistantSend": "Perguntar",
 	"assistantSending": "Perguntando",
 	"assistantConfirm": "Confirmar proposta",
-	"assistantConfirming": "Confirmando"
+	"assistantConfirming": "Confirmando",
+	"hubNav": "Hub",
+	"hubTitle": "Hub",
+	"hubNote": "O hub recebe o retrato e os eventos. A senha fica no agent.",
+	"hubRemote": "O endereço do hub remoto ainda não foi escolhido.",
+	"hubApprove": "Aprovar agent",
+	"hubApproving": "Aprovando",
+	"hubWrite": "Uma escrita continua no agent e pede confirmação lá.",
+	"hubSessionLocked": "A sessão está fechada. O hub não pede a senha.",
+	"hubSessionOpen": "Sessão aberta",
+	"columnRoutes": "Rotas",
+	"columnLeases": "Leases",
+	"columnDevices": "Aparelhos"
 }

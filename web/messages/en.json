@@ -98,5 +98,17 @@
 	"assistantSend": "Ask",
 	"assistantSending": "Asking",
 	"assistantConfirm": "Confirm proposal",
-	"assistantConfirming": "Confirming"
+	"assistantConfirming": "Confirming",
+	"hubNav": "Hub",
+	"hubTitle": "Hub",
+	"hubNote": "The hub receives the portrait and the events. The password stays on the agent.",
+	"hubRemote": "The remote hub address has not been chosen.",
+	"hubApprove": "Approve agent",
+	"hubApproving": "Approving",
+	"hubWrite": "A write stays on the agent and asks for confirmation there.",
+	"hubSessionLocked": "The session is closed. The hub does not ask for the password.",
+	"hubSessionOpen": "Session open",
+	"columnRoutes": "Routes",
+	"columnLeases": "Leases",
+	"columnDevices": "Devices"
 }

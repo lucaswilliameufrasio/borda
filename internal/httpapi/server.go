@@ -43,6 +43,9 @@ func New(store *hub.Store, logger *log.Logger, origins []string) *Server {
 	server.mux.HandleFunc("POST /v1/routers/{id}/proof", server.proof)
 	server.mux.HandleFunc("POST /v1/routers/{id}/assistant", server.assistant)
 	server.mux.HandleFunc("POST /v1/routers/{id}/assistant/actions", server.assistantAction)
+	server.mux.HandleFunc("GET /v1/routers/{id}/hub", server.hub)
+	server.mux.HandleFunc("POST /v1/routers/{id}/link", server.link)
+	server.mux.HandleFunc("POST /v1/hub/agents/{id}/commands", server.hubCommand)
 	return server
 }
 
@@ -159,6 +162,38 @@ func (server *Server) proof(response http.ResponseWriter, request *http.Request)
 	server.writeProof(response, proof, err)
 }
 
+func (server *Server) hub(response http.ResponseWriter, request *http.Request) {
+	view, err := server.store.Hub(request.Context(), request.PathValue("id"))
+	if err != nil {
+		writeStoreError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, view)
+}
+
+func (server *Server) link(response http.ResponseWriter, request *http.Request) {
+	var body linkBody
+	if err := decodeJSON(response, request, &body); err != nil {
+		writeDecodeError(response, err)
+		return
+	}
+	view, err := server.store.Link(request.Context(), request.PathValue("id"), body.Confirmed)
+	if err != nil {
+		writeStoreError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, view)
+}
+
+func (server *Server) hubCommand(response http.ResponseWriter, request *http.Request) {
+	var body hubCommandBody
+	if err := decodeJSON(response, request, &body); err != nil {
+		writeDecodeError(response, err)
+		return
+	}
+	writeStoreError(response, server.store.RefuseHubWrite(request.PathValue("id")))
+}
+
 func (server *Server) assistant(response http.ResponseWriter, request *http.Request) {
 	var body assistantBody
 	if err := decodeJSON(response, request, &body); err != nil {
@@ -264,6 +299,15 @@ type unlockBody struct {
 
 type proofBody struct {
 	Confirmed bool `json:"confirmed"`
+}
+
+type linkBody struct {
+	Confirmed bool `json:"confirmed"`
+}
+
+type hubCommandBody struct {
+	Action    string `json:"action"`
+	Confirmed bool   `json:"confirmed"`
 }
 
 type assistantBody struct {

@@ -5,6 +5,8 @@ import {
 	type DetailView,
 	type Device,
 	type FieldError,
+	type HubPortrait,
+	type HubView,
 	type ForwardRule,
 	type Lease,
 	type AssistantKind,
@@ -284,6 +286,51 @@ function readReason(value: string): PathReason {
 		return value;
 	}
 	throw new ParseError('reason');
+}
+
+export function parseHub(value: unknown): HubView {
+	if (!isRecord(value)) {
+		throw new ParseError('hub');
+	}
+	const name = requireString(value, 'name');
+	const linked = requireBoolean(value, 'linked');
+	if (!linked) {
+		if (value.portrait !== undefined || value.events !== undefined) {
+			throw new ParseError('hub');
+		}
+		return { linked: false, name };
+	}
+	return {
+		linked: true,
+		name,
+		portrait: parseHubPortrait(value.portrait),
+		events: parseEvents(value.events),
+	};
+}
+
+function parseHubPortrait(value: unknown): HubPortrait {
+	if (!isRecord(value)) {
+		throw new ParseError('portrait');
+	}
+	const portrait: HubPortrait = {
+		session: readSession(requireString(value, 'session')),
+		hasActiveRoute: requireBoolean(value, 'has_active_route'),
+		leaseCount: requireNumber(value, 'lease_count'),
+		deviceCount: requireNumber(value, 'device_count'),
+		routeCount: requireNumber(value, 'route_count'),
+	};
+	const gateway = readOptionalString(value, 'active_gateway');
+	if (gateway !== undefined) {
+		portrait.activeGateway = gateway;
+	}
+	const interfaceName = readOptionalString(value, 'active_interface');
+	if (interfaceName !== undefined) {
+		portrait.activeInterface = interfaceName;
+	}
+	if (value.active_distance !== undefined) {
+		portrait.activeDistance = requireNumber(value, 'active_distance');
+	}
+	return portrait;
 }
 
 export function parseAssistant(value: unknown): AssistantReply {

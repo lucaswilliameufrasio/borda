@@ -319,6 +319,70 @@ func TestShouldRefuseAnAssistantProposalOutsideTheList(t *testing.T) {
 	}
 }
 
+func TestShouldKeepThePasswordOffTheHub(t *testing.T) {
+	password := "plane-router-secret"
+	passphrase := "plane-vault-secret"
+	logs := &bytes.Buffer{}
+	dir := t.TempDir()
+	memory := routeros.NewMemory()
+	memory.Set("ready.example", "identity\tExample\t7.0\n"+
+		"route\t192.0.2.1\ttrue\t1\t192.0.2.1%ether1\n"+
+		"lease\t192.0.2.20\tAA:BB:CC:DD:EE:FF\tlan-host-secret\n"+
+		"check\t1\n")
+	store, err := hub.Open(dir, secret.NewKeeper(dir, secret.NewMemoryKeyring(), nil), memory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := New(store, log.New(logs, "", 0), []string{"http://127.0.0.1:5173"}).Handler()
+	created := postJSON(handler, "/v1/routers", `{
+		"name": "Prova",
+		"host": "ready.example",
+		"username": "reader",
+		"check_address": "192.0.2.1",
+		"vault_kind": "file",
+		"router_password": "`+password+`",
+		"vault_passphrase": "`+passphrase+`"
+	}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", created.Code, created.Body.String())
+	}
+	var router map[string]any
+	if err := json.Unmarshal(created.Body.Bytes(), &router); err != nil {
+		t.Fatal(err)
+	}
+	id, ok := router["id"].(string)
+	if !ok || id == "" {
+		t.Fatal("missing id")
+	}
+	waiting := get(handler, "/v1/routers/"+id+"/hub")
+	if waiting.Code != http.StatusOK || !strings.Contains(waiting.Body.String(), `"linked":false`) {
+		t.Fatalf("waiting %d %s", waiting.Code, waiting.Body.String())
+	}
+	if strings.Contains(waiting.Body.String(), "ready.example") || strings.Contains(waiting.Body.String(), "reader") {
+		t.Fatal("unpublished hub view includes the agent address")
+	}
+	refused := postJSON(handler, "/v1/routers/"+id+"/link", `{"confirmed":false}`)
+	if refused.Code != http.StatusUnprocessableEntity || !strings.Contains(refused.Body.String(), `"field":"confirmed"`) {
+		t.Fatalf("refused link %d %s", refused.Code, refused.Body.String())
+	}
+	linked := postJSON(handler, "/v1/routers/"+id+"/link", `{"confirmed":true}`)
+	if linked.Code != http.StatusOK || !strings.Contains(linked.Body.String(), `"linked":true`) || !strings.Contains(linked.Body.String(), `"active_gateway":"192.0.2.1"`) {
+		t.Fatalf("linked %d %s", linked.Code, linked.Body.String())
+	}
+	assertNoSecret(t, linked.Body.String(), password, passphrase, "lan-host-secret", "reader", "ready.example")
+	assertNoNull(t, linked.Body.Bytes())
+	command := postJSON(handler, "/v1/hub/agents/"+id+"/commands", `{"action":"proof","confirmed":true}`)
+	if command.Code != http.StatusUnprocessableEntity || !strings.Contains(command.Body.String(), "validation_errors") {
+		t.Fatalf("command %d %s", command.Code, command.Body.String())
+	}
+	if len(memory.ProofCalls("ready.example")) != 0 {
+		t.Fatal("hub command wrote to the router")
+	}
+	if strings.Contains(logs.String(), password) || strings.Contains(logs.String(), passphrase) {
+		t.Fatal("log includes a secret")
+	}
+}
+
 func testHandler(t *testing.T, logs io.Writer) http.Handler {
 	t.Helper()
 	dir := t.TempDir()

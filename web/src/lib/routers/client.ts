@@ -1,5 +1,5 @@
-import { ApiError, type AssistantReply, type PathEvent, type ProofResult, type RouterSummary, type SetupDraft, type Snapshot } from './model';
-import { parseApiError, parseAssistant, parseEvents, parseProof, parseRouter, parseRouterList, parseSnapshot } from './parse';
+import { ApiError, type AssistantReply, type HubView, type PathEvent, type ProofResult, type RouterSummary, type SetupDraft, type Snapshot } from './model';
+import { parseApiError, parseAssistant, parseEvents, parseHub, parseProof, parseRouter, parseRouterList, parseSnapshot } from './parse';
 import { buildProofBody, buildRegisterBody, buildUnlockBody } from './request';
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -37,6 +37,14 @@ export function createClient(baseUrl: string, fetchFn: FetchLike) {
 		async ask(id: string, question: string): Promise<AssistantReply> {
 			const payload = await requestJson(fetchFn, 'POST', `${root}/v1/routers/${encodeURIComponent(id)}/assistant`, { question });
 			return parseAssistant(payload);
+		},
+		async hub(id: string): Promise<HubView> {
+			const payload = await requestJson(fetchFn, 'GET', `${root}/v1/routers/${encodeURIComponent(id)}/hub`);
+			return parseHub(payload);
+		},
+		async approveAgent(id: string): Promise<HubView> {
+			const payload = await requestJson(fetchFn, 'POST', `${root}/v1/routers/${encodeURIComponent(id)}/link`, { confirmed: true });
+			return parseHub(payload);
 		},
 		async applyProposal(id: string): Promise<ProofResult> {
 			const payload = await requestJson(fetchFn, 'POST', `${root}/v1/routers/${encodeURIComponent(id)}/assistant/actions`, {

@@ -87,6 +87,7 @@ type Store struct {
 	dir         string
 	path        string
 	historyPath string
+	linksPath   string
 	keeper      *secret.Keeper
 	reader      routeros.Reader
 	now         func() time.Time
@@ -95,6 +96,7 @@ type Store struct {
 	routers      []storedRouter
 	observations map[string]pathObservation
 	events       []storedEvent
+	links        []storedLink
 }
 
 func Open(dir string, keeper *secret.Keeper, reader routeros.Reader) (*Store, error) {
@@ -105,16 +107,21 @@ func Open(dir string, keeper *secret.Keeper, reader routeros.Reader) (*Store, er
 		dir:          dir,
 		path:         filepath.Join(dir, "routers.json"),
 		historyPath:  filepath.Join(dir, "events.json"),
+		linksPath:    filepath.Join(dir, "links.json"),
 		keeper:       keeper,
 		reader:       reader,
 		routers:      []storedRouter{},
 		observations: map[string]pathObservation{},
 		events:       []storedEvent{},
+		links:        []storedLink{},
 	}
 	if err := store.load(); err != nil {
 		return nil, err
 	}
 	if err := store.loadHistory(); err != nil {
+		return nil, err
+	}
+	if err := store.loadLinks(); err != nil {
 		return nil, err
 	}
 	return store, nil

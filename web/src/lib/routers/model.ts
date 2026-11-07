@@ -144,6 +144,21 @@ export type AssistantReply = {
 	proposal?: AssistantProposal;
 };
 
+export type HubPortrait = {
+	session: SessionName;
+	hasActiveRoute: boolean;
+	activeGateway?: string;
+	activeInterface?: string;
+	activeDistance?: number;
+	leaseCount: number;
+	deviceCount: number;
+	routeCount: number;
+};
+
+export type HubView =
+	| { linked: false; name: string }
+	| { linked: true; name: string; portrait: HubPortrait; events: PathEvent[] };
+
 export class ParseError extends Error {
 	readonly field: string;
 
