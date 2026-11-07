@@ -122,6 +122,20 @@ export type ProofBody = {
 	confirmed: true;
 };
 
+export type WanResult = {
+	comment: string;
+	interfaceName: string;
+	distance: number;
+	alreadyPresent: boolean;
+};
+
+export type WanBody = {
+	name: string;
+	interface_name: string;
+	distance: number;
+	confirmed: true;
+};
+
 export type PathReason = 'check_failed' | 'proof_requested' | 'route_restored';
 
 export type PathEvent = {

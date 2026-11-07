@@ -87,6 +87,35 @@ func ParseReading(output string) Reading {
 					InterfaceName: fields[4],
 				})
 			}
+		case "bridge":
+			if len(fields) >= 3 {
+				reading.BridgePorts = append(reading.BridgePorts, BridgePort{
+					InterfaceName: fields[1],
+					Bridge:        fields[2],
+				})
+			}
+		case "dhcp":
+			if len(fields) >= 3 {
+				distance, _ := strconv.Atoi(fields[2])
+				comment := ""
+				if len(fields) >= 4 {
+					comment = fields[3]
+				}
+				reading.DHCPClients = append(reading.DHCPClients, DHCPClient{
+					InterfaceName: fields[1],
+					Distance:      distance,
+					Comment:       comment,
+				})
+			}
+		case "nat":
+			if len(fields) >= 5 {
+				reading.NAT = append(reading.NAT, NATRule{
+					Chain:         fields[1],
+					Action:        fields[2],
+					InterfaceName: fields[3],
+					Comment:       fields[4],
+				})
+			}
 		case "check":
 			if len(fields) >= 2 {
 				received, err := strconv.Atoi(fields[1])

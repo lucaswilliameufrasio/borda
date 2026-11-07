@@ -136,7 +136,7 @@
 			</label>
 			<label>
 				{m.fieldCheck()}
-				<input name="check_address" autocomplete="off" />
+				<input name="check_address" autocomplete="off" placeholder={m.checkPlaceholder()} />
 				<span class="hint">{m.checkHint()}</span>
 				{#if messageFor('check_address') !== undefined}
 					<span class="error">{messageFor('check_address')}</span>

@@ -15,6 +15,7 @@ import {
 	type PathEvent,
 	type PathReason,
 	type ProofResult,
+	type WanResult,
 	type Reserve,
 	type RouteRow,
 	type RouterSummary,
@@ -110,6 +111,18 @@ export function parseProof(value: unknown): ProofResult {
 		primaryActive: requireBoolean(value, 'primary_active'),
 		usbReceived: requireNumber(value, 'usb_received'),
 		lanReceived: requireNumber(value, 'lan_received'),
+	};
+}
+
+export function parseWan(value: unknown): WanResult {
+	if (!isRecord(value)) {
+		throw new ParseError('wan');
+	}
+	return {
+		comment: requireString(value, 'comment'),
+		interfaceName: requireString(value, 'interface_name'),
+		distance: requireNumber(value, 'distance'),
+		alreadyPresent: requireBoolean(value, 'already_present'),
 	};
 }
 

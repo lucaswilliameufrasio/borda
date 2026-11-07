@@ -397,6 +397,102 @@ func testHandler(t *testing.T, logs io.Writer) http.Handler {
 	return server.Handler()
 }
 
+func TestShouldRegisterAWanWithoutTouchingThePrimaryRoute(t *testing.T) {
+	password := "plane-router-secret"
+	passphrase := "plane-vault-secret"
+	logs := &bytes.Buffer{}
+	dir := t.TempDir()
+	memory := routeros.NewMemory()
+	memory.Set("wan.example", "identity\tExample\t7.0\n"+
+		"route\t192.0.2.1\ttrue\t1\t192.0.2.1%ether1\tborda-primary\n"+
+		"address\tbridge\t192.0.2.10/24\n"+
+		"address\tether1\t192.0.2.40/24\n"+
+		"bridge\tether2\tbridge\n")
+	store, err := hub.Open(dir, secret.NewKeeper(dir, secret.NewMemoryKeyring(), nil), memory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := New(store, log.New(logs, "", 0), []string{"http://127.0.0.1:5173"}).Handler()
+	created := postJSON(handler, "/v1/routers", `{
+		"name": "WAN",
+		"host": "wan.example",
+		"username": "reader",
+		"check_address": "192.0.2.1",
+		"vault_kind": "file",
+		"router_password": "`+password+`",
+		"vault_passphrase": "`+passphrase+`"
+	}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", created.Code, created.Body.String())
+	}
+	var router map[string]any
+	if err := json.Unmarshal(created.Body.Bytes(), &router); err != nil {
+		t.Fatal(err)
+	}
+	id, ok := router["id"].(string)
+	if !ok || id == "" {
+		t.Fatal("missing id")
+	}
+	refused := postJSON(handler, "/v1/routers/"+id+"/wans", `{"name":"Cabo","interface_name":"ether2","distance":2,"confirmed":false}`)
+	if refused.Code != http.StatusUnprocessableEntity || !strings.Contains(refused.Body.String(), `"field":"confirmed"`) {
+		t.Fatalf("refused %d %s", refused.Code, refused.Body.String())
+	}
+	badName := postJSON(handler, "/v1/routers/"+id+"/wans", `{"name":"1cabo","interface_name":"ether2","distance":2,"confirmed":true}`)
+	if badName.Code != http.StatusUnprocessableEntity || !strings.Contains(badName.Body.String(), `"field":"name"`) {
+		t.Fatalf("name %d %s", badName.Code, badName.Body.String())
+	}
+	lan := postJSON(handler, "/v1/routers/"+id+"/wans", `{"name":"Cabo","interface_name":"bridge","distance":2,"confirmed":true}`)
+	if lan.Code != http.StatusPreconditionFailed || !strings.Contains(lan.Body.String(), `"reason":"not_spare"`) {
+		t.Fatalf("lan %d %s", lan.Code, lan.Body.String())
+	}
+	used := postJSON(handler, "/v1/routers/"+id+"/wans", `{"name":"Cabo","interface_name":"ether2","distance":1,"confirmed":true}`)
+	if used.Code != http.StatusPreconditionFailed || !strings.Contains(used.Body.String(), `"reason":"distance_taken"`) {
+		t.Fatalf("distance %d %s", used.Code, used.Body.String())
+	}
+	if len(memory.WanCalls("wan.example")) != 0 || len(memory.ProofCalls("wan.example")) != 0 {
+		t.Fatal("a refused wan wrote to the router")
+	}
+	createdWan := postJSON(handler, "/v1/routers/"+id+"/wans", `{"name":"Cabo","interface_name":"ether2","distance":2,"confirmed":true}`)
+	if createdWan.Code != http.StatusOK || !strings.Contains(createdWan.Body.String(), `"comment":"borda-wan-cabo"`) || !strings.Contains(createdWan.Body.String(), `"already_present":false`) {
+		t.Fatalf("wan %d %s", createdWan.Code, createdWan.Body.String())
+	}
+	assertNoSecret(t, createdWan.Body.String(), password, passphrase)
+	assertNoNull(t, createdWan.Body.Bytes())
+	calls := memory.WanCalls("wan.example")
+	if len(calls) != 3 {
+		t.Fatalf("calls %#v", calls)
+	}
+	joined := strings.Join(calls, "\n")
+	if strings.Contains(joined, "borda-primary") || !strings.Contains(joined, "borda-wan-cabo") {
+		t.Fatalf("scripts %s", joined)
+	}
+	if len(memory.ProofCalls("wan.example")) != 0 {
+		t.Fatal("wan registration disabled the primary route")
+	}
+	again := postJSON(handler, "/v1/routers/"+id+"/wans", `{"name":"cabo","interface_name":"ether2","distance":2,"confirmed":true}`)
+	if again.Code != http.StatusOK || !strings.Contains(again.Body.String(), `"already_present":true`) {
+		t.Fatalf("repeat %d %s", again.Code, again.Body.String())
+	}
+	if len(memory.WanCalls("wan.example")) != 3 {
+		t.Fatal("repeat wrote another wan")
+	}
+	memory.Set("wan.example", "identity\tExample\t7.0\n"+
+		"route\t192.0.2.1\ttrue\t1\t192.0.2.1%ether1\tborda-primary\n"+
+		"address\tbridge\t192.0.2.10/24\n"+
+		"dhcp\tether3\t3\tborda-wan-cabo\n"+
+		"nat\tsrcnat\tmasquerade\tether3\tborda-wan-cabo\n")
+	moved := postJSON(handler, "/v1/routers/"+id+"/wans", `{"name":"Cabo","interface_name":"ether2","distance":2,"confirmed":true}`)
+	if moved.Code != http.StatusPreconditionFailed || !strings.Contains(moved.Body.String(), `"reason":"comment_taken"`) {
+		t.Fatalf("comment %d %s", moved.Code, moved.Body.String())
+	}
+	if len(memory.WanCalls("wan.example")) != 3 {
+		t.Fatal("comment conflict wrote to the router")
+	}
+	if strings.Contains(logs.String(), password) || strings.Contains(logs.String(), passphrase) {
+		t.Fatal("log includes a secret")
+	}
+}
+
 func postJSON(handler http.Handler, path string, body string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/json")

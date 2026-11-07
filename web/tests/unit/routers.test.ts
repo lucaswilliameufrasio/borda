@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { ParseError } from '../../src/lib/routers/model';
-import { detailView, fieldMessage, findDevice, parseAssistant, parseEvents, parseHub, parseProof, parseSnapshot } from '../../src/lib/routers/parse';
-import { buildProofBody, buildRegisterBody } from '../../src/lib/routers/request';
+import { detailView, fieldMessage, findDevice, parseAssistant, parseEvents, parseHub, parseProof, parseSnapshot, parseWan } from '../../src/lib/routers/parse';
+import { buildProofBody, buildRegisterBody, buildWanBody } from '../../src/lib/routers/request';
 
 it('Should show an empty route when no default is active', () => {
 	const snapshot = parseSnapshot({
@@ -176,6 +176,23 @@ it('Should read a field message by name', () => {
 
 it('Should reject a snapshot that is not an object', () => {
 	expect(() => parseSnapshot([])).toThrow(ParseError);
+});
+
+it('Should build a wan registration without a secret field', () => {
+	const body = buildWanBody(' Cabo ', ' ether2 ', 2);
+	expect(body.name).toBe('Cabo');
+	expect(body.interface_name).toBe('ether2');
+	expect(body.distance).toBe(2);
+	expect(body.confirmed).toBe(true);
+	expect(Object.hasOwn(body, 'router_password')).toBe(false);
+	const parsed = parseWan({
+		comment: 'borda-wan-cabo',
+		interface_name: 'ether2',
+		distance: 2,
+		already_present: false,
+	});
+	expect(parsed.comment).toBe('borda-wan-cabo');
+	expect(parsed.alreadyPresent).toBe(false);
 });
 
 it('Should build a confirmed proof without a secret field', () => {

@@ -41,6 +41,7 @@ func New(store *hub.Store, logger *log.Logger, origins []string) *Server {
 	server.mux.HandleFunc("GET /v1/routers/{id}/events", server.events)
 	server.mux.HandleFunc("POST /v1/routers/{id}/session", server.unlock)
 	server.mux.HandleFunc("POST /v1/routers/{id}/proof", server.proof)
+	server.mux.HandleFunc("POST /v1/routers/{id}/wans", server.wan)
 	server.mux.HandleFunc("POST /v1/routers/{id}/assistant", server.assistant)
 	server.mux.HandleFunc("POST /v1/routers/{id}/assistant/actions", server.assistantAction)
 	server.mux.HandleFunc("GET /v1/routers/{id}/hub", server.hub)
@@ -160,6 +161,54 @@ func (server *Server) proof(response http.ResponseWriter, request *http.Request)
 	}
 	proof, err := server.store.Prove(request.Context(), request.PathValue("id"), body.Confirmed)
 	server.writeProof(response, proof, err)
+}
+
+func (server *Server) wan(response http.ResponseWriter, request *http.Request) {
+	var body wanBody
+	if err := decodeJSON(response, request, &body); err != nil {
+		writeDecodeError(response, err)
+		return
+	}
+	result, err := server.store.RegisterWAN(request.Context(), request.PathValue("id"), body.Name, body.InterfaceName, body.Distance, body.Confirmed)
+	if err != nil {
+		var notReady *routeros.WanError
+		if errors.As(err, &notReady) {
+			writeJSON(response, http.StatusPreconditionFailed, map[string]any{
+				"message":    wanRefusalMessage(notReady.Reason),
+				"error_code": "WAN_NOT_READY",
+				"extra":      map[string]string{"reason": notReady.Reason},
+			})
+			return
+		}
+		if errors.Is(err, routeros.ErrWanIncomplete) {
+			writeJSON(response, http.StatusInternalServerError, map[string]any{
+				"message":    "O cadastro da WAN não terminou. Repetir continua pelo mesmo comentário.",
+				"error_code": "WAN_NOT_FINISHED",
+			})
+			return
+		}
+		writeStoreError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, map[string]any{
+		"comment":         result.Comment,
+		"interface_name":  result.InterfaceName,
+		"distance":        result.Distance,
+		"already_present": result.AlreadyPresent,
+	})
+}
+
+func wanRefusalMessage(reason string) string {
+	if reason == routeros.ReasonDistanceTaken {
+		return "Essa distância já está em uso. Nada foi alterado."
+	}
+	if reason == routeros.ReasonCommentTaken {
+		return "Esse nome já está em outra porta. Nada foi alterado."
+	}
+	if reason == routeros.ReasonMissingActiveRoute {
+		return "Não há rota padrão ativa. Nada foi alterado."
+	}
+	return "Essa porta não pode virar WAN. Nada foi alterado."
 }
 
 func (server *Server) hub(response http.ResponseWriter, request *http.Request) {
@@ -299,6 +348,13 @@ type unlockBody struct {
 
 type proofBody struct {
 	Confirmed bool `json:"confirmed"`
+}
+
+type wanBody struct {
+	Name          string `json:"name"`
+	InterfaceName string `json:"interface_name"`
+	Distance      int    `json:"distance"`
+	Confirmed     bool   `json:"confirmed"`
 }
 
 type linkBody struct {

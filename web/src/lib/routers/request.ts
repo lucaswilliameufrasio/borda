@@ -1,4 +1,4 @@
-import type { ProofBody, RegisterBody, SetupDraft } from './model';
+import type { ProofBody, RegisterBody, SetupDraft, WanBody } from './model';
 
 export function buildRegisterBody(draft: SetupDraft): RegisterBody {
 	const body: RegisterBody = {
@@ -42,6 +42,15 @@ export function buildRegisterBody(draft: SetupDraft): RegisterBody {
 
 export function buildProofBody(): ProofBody {
 	return { confirmed: true };
+}
+
+export function buildWanBody(name: string, interfaceName: string, distance: number): WanBody {
+	return {
+		name: name.trim(),
+		interface_name: interfaceName.trim(),
+		distance,
+		confirmed: true,
+	};
 }
 
 export function buildUnlockBody(passphrase: string, token: string): RegisterBody {

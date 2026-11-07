@@ -93,7 +93,7 @@ A pessoa aprova o agent na LAN. O hub passa a receber retrato e evento. A creden
 - Assistente. Leitura sobre o retrato filtrado e uma lista fechada de propostas. A escrita passa pelo comando, com confirmação.
 - Comando. Idempotência por comentário estável. Recusa comando fora da lista. Mostra o que vai mudar antes de aplicar.
 
-Os comentários estáveis são o contrato das escritas. A prova só pode desabilitar a rota padrão cujo comentário é `borda-primary`. Sem esse comentário, com mais de uma rota assim, ou sem USB em pé, forward da LAN para essa USB e um endereço de LAN, a prova não começa e nada é desabilitado. O comentário de uma WAN cadastrada ainda não está fechado. A leitura da fatia 1 não depende desses comentários: ela mostra a rota padrão que o roteador já tem.
+Os comentários estáveis são o contrato das escritas. A prova só pode desabilitar a rota padrão cujo comentário é `borda-primary`. Sem esse comentário, com mais de uma rota assim, ou sem USB em pé, forward da LAN para essa USB e um endereço de LAN, a prova não começa e nada é desabilitado. Uma WAN cadastrada usa o comentário `borda-wan-` seguido do nome em minúsculas, no cliente DHCP e no NAT. A prova continua só podendo desabilitar `borda-primary`. A leitura da fatia 1 não depende desses comentários: ela mostra a rota padrão que o roteador já tem.
 
 ## Observabilidade
 
@@ -107,7 +107,7 @@ Um gráfico de vazão da interface pode entrar depois do evento de troca. Sem o 
 
 ## Fatias
 
-Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A fatia 2 também. As duas foram exercitadas num CHR RouterOS 7.25.1 de laboratório, com SSH só em 127.0.0.1. A leitura mostrou a identidade `lab`, a rota padrão ativa por `ether1` e a checagem `1.1.1.1` respondendo. A prova confirmada respondeu 412 `PROOF_NOT_READY` com motivo `missing_primary`: esse CHR não tem LTE e a rota do DHCP não carrega o comentário `borda-primary`. A rota permaneceu ativa. AC-08 não fecha neste CHR, porque não há USB para medir. Rota ausente, sessão falha e dois agents seguem verificados só no roteador falso. A fatia 3 lista os aparelhos da leitura atual, juntando DHCP, ARP e neighbor pelo MAC. No mesmo CHR, o único aparelho foi o gateway visto por ARP em `ether1`, sem nome anunciado e sem lease. Abrir esse aparelho mostrou o endereço e o caminho ativo, e a rota padrão continuou ativa. Neighbor e lease nesse CHR estavam vazios; a junção deles ficou no teste. Não há amostra guardada, então visto há pouco e ausente continuam de fora. A fatia 4 grava a troca de caminho no hub, com hora e um destes motivos: a checagem falhou, a prova foi pedida, ou a rota foi reabilitada. A primeira leitura conectada só marca o caminho e não cria evento. Troca com a checagem ainda respondendo fica só como observação, sem motivo inventado. Prova recusada não entra. Se a reabilitação falha, fica só o pedido da prova. Listar o histórico não consulta o roteador. Nada é apagado enquanto a decisão de guarda estiver aberta. No CHR, com o cofre fechado, a tela de trocas abriu vazia: só o cadastro e a lista de eventos, sem retrato e sem escrita. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio. Os três motivos ficaram no teste, porque esse CHR não trocou de caminho e a prova não começa. AC-08 continua aberto. A fatia 5 responde a partir do retrato filtrado e só pode propor a prova da USB. Senha, usuário, URL com credencial, export, backup e conteúdo de usuário ficam fora desse retrato. Proposta fora da lista não é executada, e sem confirmação a prova não começa. O modelo continua sem escolha e sem cliente do roteador. No CHR, com o cofre fechado, pedir um export foi recusado e perguntar o caminho respondeu que falta a sessão. Não houve chamada de ação. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio. A confirmação da prova e o filtro do retrato ficaram no teste. A fatia 6 aprova o agent e o hub passa a receber o retrato filtrado e os eventos. A senha não vai junto. Um comando de escrita enviado ao hub não roda: a confirmação continua no agent. O endereço do hub remoto continua em aberto. No CHR, com o cofre fechado, a aprovação mostrou a sessão fechada, zero rotas e nenhuma troca, sem pedir senha. Não houve comando de escrita. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio. O retrato conectado e a recusa do comando ficaram no teste. AC-08 continua aberto.
+Cada fatia fecha uma jornada e fica demonstrável sozinha. A fatia 1 tem API e frontend neste repositório. A fatia 2 também. As duas foram exercitadas num CHR RouterOS 7.25.1 de laboratório, com SSH só em 127.0.0.1. A leitura mostrou a identidade `lab`, a rota padrão ativa por `ether1` e a checagem `1.1.1.1` respondendo. A prova confirmada respondeu 412 `PROOF_NOT_READY` com motivo `missing_primary`: esse CHR não tem LTE e a rota do DHCP não carrega o comentário `borda-primary`. A rota permaneceu ativa. AC-08 não fecha neste CHR, porque não há USB para medir. Rota ausente, sessão falha e dois agents seguem verificados só no roteador falso. A fatia 3 lista os aparelhos da leitura atual, juntando DHCP, ARP e neighbor pelo MAC. No mesmo CHR, o único aparelho foi o gateway visto por ARP em `ether1`, sem nome anunciado e sem lease. Abrir esse aparelho mostrou o endereço e o caminho ativo, e a rota padrão continuou ativa. Neighbor e lease nesse CHR estavam vazios; a junção deles ficou no teste. Não há amostra guardada, então visto há pouco e ausente continuam de fora. A fatia 4 grava a troca de caminho no hub, com hora e um destes motivos: a checagem falhou, a prova foi pedida, ou a rota foi reabilitada. A primeira leitura conectada só marca o caminho e não cria evento. Troca com a checagem ainda respondendo fica só como observação, sem motivo inventado. Prova recusada não entra. Se a reabilitação falha, fica só o pedido da prova. Listar o histórico não consulta o roteador. A troca de caminho fica até o roteador sair do cadastro. No CHR, com o cofre fechado, a tela de trocas abriu vazia: só o cadastro e a lista de eventos, sem retrato e sem escrita. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio. Os três motivos ficaram no teste, porque esse CHR não trocou de caminho e a prova não começa. AC-08 continua aberto. A fatia 5 responde a partir do retrato filtrado e só pode propor a prova da USB. Senha, usuário, URL com credencial, export, backup e conteúdo de usuário ficam fora desse retrato. Proposta fora da lista não é executada, e sem confirmação a prova não começa. O assistente responde pelas regras e não chama um modelo. No CHR, com o cofre fechado, pedir um export foi recusado e perguntar o caminho respondeu que falta a sessão. Não houve chamada de ação. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio. A confirmação da prova e o filtro do retrato ficaram no teste. A fatia 6 aprova o agent e o hub passa a receber o retrato filtrado e os eventos. A senha não vai junto. Um comando de escrita enviado ao hub não roda: a confirmação continua no agent. O endereço do hub remoto fica sem escolha no modo local. No CHR, com o cofre fechado, a aprovação mostrou a sessão fechada, zero rotas e nenhuma troca, sem pedir senha. Não houve comando de escrita. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio. O retrato conectado e a recusa do comando ficaram no teste. AC-08 continua aberto.
 
 ### 1. Setup e caminho ativo, só leitura
 
@@ -144,7 +144,7 @@ A pessoa abre um aparelho da leitura atual e vê endereço, nome anunciado e o c
 
 ### 4. Histórico de troca de caminho
 
-Cada troca registrada no hub tem hora e motivo. O roteador não é consultado como arquivo desse histórico. A tela abre com o cofre fechado. A primeira leitura conectada não vira evento. Sem tempo de guarda decidido, o hub não apaga evento.
+Cada troca registrada no hub tem hora e motivo. O roteador não é consultado como arquivo desse histórico. A tela abre com o cofre fechado. A primeira leitura conectada não vira evento. A troca fica guardada até o roteador sair do cadastro, então o hub não apaga evento.
 
 | ID | Resultado observável |
 | --- | --- |
@@ -154,7 +154,7 @@ Cada troca registrada no hub tem hora e motivo. O roteador não é consultado co
 
 ### 5. Assistente em modo proposta
 
-A pessoa pergunta o que está vendo. A resposta sai do retrato filtrado: interfaces, comentários, distâncias, flags e contagens. Senha, usuário, URL com credencial, export, backup e conteúdo de usuário não entram. A única proposta da lista é a prova da USB. Fora da lista, nada é executado. Sem confirmação, a prova não começa. O modelo ainda não foi escolhido e esta fatia não chama um.
+A pessoa pergunta o que está vendo. A resposta sai do retrato filtrado: interfaces, comentários, distâncias, flags e contagens. Senha, usuário, URL com credencial, export, backup e conteúdo de usuário não entram. A única proposta da lista é a prova da USB. Fora da lista, nada é executado. Sem confirmação, a prova não começa. Esta fatia não chama um modelo. A resposta fica nas regras do retrato.
 
 | ID | Resultado observável |
 | --- | --- |
@@ -164,13 +164,24 @@ A pessoa pergunta o que está vendo. A resposta sai do retrato filtrado: interfa
 
 ### 6. Agent separado e hub remoto
 
-A pessoa aprova o agent. O hub passa a receber o retrato filtrado e os eventos. A senha e o usuário ficam no agent. Um comando de escrita enviado ao hub não é executado: a confirmação continua no agent. O endereço onde o hub remoto mora continua em aberto. Esta fatia guarda a aprovação neste console.
+A pessoa aprova o agent. O hub passa a receber o retrato filtrado e os eventos. A senha e o usuário ficam no agent. Um comando de escrita enviado ao hub não é executado: a confirmação continua no agent. O endereço do hub remoto fica sem escolha no modo local. Esta fatia guarda a aprovação neste console.
 
 | ID | Resultado observável |
 | --- | --- |
 | AC-19 | Depois da aprovação, o hub mostra o retrato e os eventos. A senha e o usuário não estão nesse retrato. |
 | AC-20 | Sem aprovação, o hub não recebe o retrato. |
 | AC-21 | Um comando de escrita enviado ao hub não altera o roteador. A confirmação continua no agent. |
+
+### 7. Cadastrar uma WAN
+
+A pessoa informa nome, porta e distância, vê o comentário `borda-wan-<nome>` e confirma. O agent tira a porta da bridge, cria o NAT masquerade e o cliente DHCP com esse comentário. Sem confirmação, nada muda. Porta com endereço, porta da rota ativa, distância já usada ou o mesmo comentário em outra porta recusam e não escrevem. Repetir o mesmo cadastro não cria outro objeto. A rota `borda-primary` não é desabilitada. No CHR, com o cofre fechado, a confirmação respondeu que o cofre não abriu. A rota padrão do DHCP continuou ativa, com `disabled=false` e comentário vazio, e não nasceu cliente DHCP nem NAT com comentário de WAN. O cadastro em si ficou no teste.
+
+| ID | Resultado observável |
+| --- | --- |
+| AC-22 | Sem confirmação, nada é escrito. |
+| AC-23 | Com confirmação, o cliente DHCP e o NAT nascem com `borda-wan-<nome>`. A rota `borda-primary` não é desabilitada. |
+| AC-24 | Porta ocupada, distância ocupada ou comentário em outra porta recusam e não escrevem. |
+| AC-25 | Repetir o mesmo nome, porta e distância não cria um segundo objeto. |
 
 ## Ordem e verificação
 
@@ -183,14 +194,16 @@ O script de leitura precisou de um ajuste encontrado nessa jornada. O RouterOS e
 - A fatia 1 é uma API em Go e um frontend SvelteKit separado. A interface nasce em inglês e português do Brasil, com Paraglide. Um hub acompanha vários agents. Cada agent fala com um MikroTik.
 - No setup, a pessoa escolhe o cofre. Os quatro adaptadores fazem parte dessa escolha: arquivo cifrado, Ciphera, Infisical e chaveiro do sistema.
 - A leitura funciona em qualquer roteador que tenha rota padrão. Ela não exige os comentários estáveis. Esses comentários só entram na prova e no cadastro de WAN.
+- O endereço de checagem é configuração do tenant e nunca vira DNS da LAN. O campo nasce vazio. A tela mostra `1.1.1.1` como sugestão. O valor só é gravado quando a pessoa preenche. Hoje esse valor fica no cadastro do roteador.
+- O endereço do hub remoto permanece sem escolha enquanto o console for local. A senha fica no agent. Um host só entra na conta quando um agent estiver na LAN de um roteador e a pessoa for olhar o retrato a partir de outro host.
+- O assistente responde pelas regras do retrato filtrado. Nenhum modelo é chamado. Se um modelo entrar depois, fica atrás do módulo de assistente, sem cliente do roteador. Ele vê o retrato filtrado e a pergunta, e só pode devolver texto ou a proposta `proof`. O provedor previsto para esse momento é SpaceXAI.
+- A troca de caminho fica guardada até o roteador sair do cadastro. A presença de aparelho guarda a transição, não cada leitura. Visto agora é a leitura corrente. Visto há pouco é a última aparição dentro de 1 hora. Ausente é mais antigo que 1 hora. O registro do aparelho sai depois de 7 dias sem aparecer. A coleta para quando o agent perde a sessão. Essa coleta ainda não está na tela.
+- A licença do repositório é MIT, no arquivo `LICENSE`.
+- Uma WAN cadastrada leva o comentário `borda-wan-` mais o nome em minúsculas. O nome começa com letra e usa letras, números e hífen. O mesmo comentário vai no cliente DHCP e no NAT masquerade. A prova da USB continua só podendo desabilitar `borda-primary`.
 
 ## Decisões em aberto
 
-1. Endereço de checagem. Ele é configuração do tenant, nunca DNS da LAN. Falta o valor inicial sugerido na tela de setup.
-2. Onde o hub remoto mora, se o modo separado for usado. Isso não muda a regra de que a senha fica no agent.
-3. Qual modelo atende o assistente. Ele entra atrás do módulo de assistente, na fatia 5, e continua sem cliente do roteador.
-4. Por quanto tempo guardar amostra de aparelho e de caminho.
-5. Licença do repositório. Ainda não há arquivo de licença.
+- A medida real da prova USB. Ela precisa de um roteador com LTE no cabo e do comentário `borda-primary`. O CHR de laboratório não fecha a AC-08.
 
 ## O que este plano não autoriza
 

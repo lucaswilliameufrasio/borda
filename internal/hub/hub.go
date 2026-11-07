@@ -279,6 +279,54 @@ func (store *Store) Prove(ctx context.Context, id string, confirmed bool) (route
 	return proof, nil
 }
 
+// RegisterWAN creates one WAN after an explicit confirmation.
+// Without confirmation it returns a validation error and does not call the router.
+func (store *Store) RegisterWAN(ctx context.Context, id string, name string, iface string, distance int, confirmed bool) (routeros.WanResult, error) {
+	if !confirmed {
+		return routeros.WanResult{}, &ValidationError{Fields: []FieldError{{
+			Field:   "confirmed",
+			Message: "A WAN só é cadastrada com confirmação.",
+		}}}
+	}
+	if _, ok := routeros.WanComment(name); !ok {
+		return routeros.WanResult{}, &ValidationError{Fields: []FieldError{{
+			Field:   "name",
+			Message: "O nome da WAN usa letras, números e hífen, e começa com letra.",
+		}}}
+	}
+	if !routeros.InterfaceSafe(iface) {
+		return routeros.WanResult{}, &ValidationError{Fields: []FieldError{{
+			Field:   "interface_name",
+			Message: "A porta só pode ter letras, números, ponto, dois-pontos e hífen.",
+		}}}
+	}
+	if distance < 1 || distance > 255 {
+		return routeros.WanResult{}, &ValidationError{Fields: []FieldError{{
+			Field:   "distance",
+			Message: "A distância fica entre 1 e 255.",
+		}}}
+	}
+	router, err := store.find(id)
+	if err != nil {
+		return routeros.WanResult{}, err
+	}
+	password, err := store.keeper.Get(ctx, router.ID, router.Vault)
+	if err != nil {
+		return routeros.WanResult{}, err
+	}
+	return store.reader.RegisterWAN(ctx, routeros.Target{
+		Host:         router.Host,
+		Port:         router.SSHPort,
+		Username:     router.Username,
+		Password:     password,
+		CheckAddress: router.CheckAddress,
+	}, routeros.WanRequest{
+		Name:          name,
+		InterfaceName: iface,
+		Distance:      distance,
+	})
+}
+
 func (store *Store) find(id string) (storedRouter, error) {
 	store.mu.Lock()
 	defer store.mu.Unlock()

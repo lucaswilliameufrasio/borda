@@ -144,6 +144,7 @@
 			<a class="button button-quiet" href={resolve('/routers/[id]/assistant', { id: data.state.router.id })}>{m.assistantNav()}</a>
 			<a class="button button-quiet" href={resolve('/routers/[id]/hub', { id: data.state.router.id })}>{m.hubNav()}</a>
 			<a class="button button-quiet" href={resolve('/routers/[id]/proof', { id: data.state.router.id })}>{m.proofNav()}</a>
+			<a class="button button-quiet" href={resolve('/routers/[id]/wan', { id: data.state.router.id })}>{m.wanNav()}</a>
 		</div>
 	</div>
 	{#if data.state.view.type === 'empty-route'}

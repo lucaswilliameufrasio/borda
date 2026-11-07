@@ -72,6 +72,9 @@ type Reading struct {
 	Neighbors       []Neighbor
 	Addresses       []Address
 	LTE             []LTE
+	DHCPClients     []DHCPClient
+	NAT             []NATRule
+	BridgePorts     []BridgePort
 	CheckReceived   *int
 }
 
@@ -95,7 +98,9 @@ const (
 // Reader performs named router operations.
 // Read does not change the router. Prove may disable only the commented primary route,
 // and it enables that route again before it returns.
+// RegisterWAN creates only the DHCP client and NAT rule commented borda-wan-<name>.
 type Reader interface {
 	Read(ctx context.Context, target Target) (Reading, error)
 	Prove(ctx context.Context, target Target) (Proof, error)
+	RegisterWAN(ctx context.Context, target Target, request WanRequest) (WanResult, error)
 }

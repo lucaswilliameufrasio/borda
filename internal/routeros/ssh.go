@@ -74,6 +74,43 @@ func (reader *SSHReader) Prove(ctx context.Context, target Target) (Proof, error
 	}, nil
 }
 
+// RegisterWAN removes the port from the bridge, then creates the commented NAT and DHCP client.
+// A later script failure returns ErrWanIncomplete so a repeat can finish the same comment.
+func (reader *SSHReader) RegisterWAN(ctx context.Context, target Target, request WanRequest) (WanResult, error) {
+	reading, err := reader.Read(ctx, target)
+	if err != nil {
+		return WanResult{}, err
+	}
+	plan, err := PlanWan(reading, request)
+	if err != nil {
+		return WanResult{}, err
+	}
+	result := WanResult{
+		Comment:        plan.Comment,
+		InterfaceName:  plan.InterfaceName,
+		Distance:       plan.Distance,
+		AlreadyPresent: plan.AlreadyPresent,
+	}
+	if plan.AlreadyPresent {
+		return result, nil
+	}
+	scripts, err := WanScripts(plan)
+	if err != nil {
+		return WanResult{}, err
+	}
+	started := false
+	for _, script := range scripts {
+		if _, err := reader.run(ctx, target, script); err != nil {
+			if started {
+				return WanResult{}, ErrWanIncomplete
+			}
+			return WanResult{}, err
+		}
+		started = true
+	}
+	return result, nil
+}
+
 func (reader *SSHReader) measure(ctx context.Context, target Target, checkAddress string, iface string, source string) (int, error) {
 	script, err := PingScript(checkAddress, iface, source)
 	if err != nil {

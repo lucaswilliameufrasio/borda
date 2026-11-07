@@ -20,6 +20,9 @@ func ReadScript(checkAddress string) (string, error) {
 		`:foreach i in=[/ip dhcp-server lease find] do={ :put ("lease` + tab + `" . [/ip dhcp-server lease get $i address] . "` + tab + `" . [/ip dhcp-server lease get $i mac-address] . "` + tab + `" . [/ip dhcp-server lease get $i host-name]) }`,
 		`:foreach i in=[/ip arp find] do={ :put ("arp` + tab + `" . [/ip arp get $i address] . "` + tab + `" . [/ip arp get $i mac-address] . "` + tab + `" . [/ip arp get $i interface]) }`,
 		`:foreach i in=[/ip neighbor find] do={ :put ("neighbor` + tab + `" . [/ip neighbor get $i address] . "` + tab + `" . [/ip neighbor get $i mac-address] . "` + tab + `" . [/ip neighbor get $i identity] . "` + tab + `" . [/ip neighbor get $i interface]) }`,
+		`:foreach i in=[/interface bridge port find] do={ :put ("bridge` + tab + `" . [/interface bridge port get $i interface] . "` + tab + `" . [/interface bridge port get $i bridge]) }`,
+		`:foreach i in=[/ip dhcp-client find] do={ :put ("dhcp` + tab + `" . [/ip dhcp-client get $i interface] . "` + tab + `" . [/ip dhcp-client get $i default-route-distance] . "` + tab + `" . [/ip dhcp-client get $i comment]) }`,
+		`:foreach i in=[/ip firewall nat find] do={ :put ("nat` + tab + `" . [/ip firewall nat get $i chain] . "` + tab + `" . [/ip firewall nat get $i action] . "` + tab + `" . [/ip firewall nat get $i out-interface] . "` + tab + `" . [/ip firewall nat get $i comment]) }`,
 	}
 	if checkAddress != "" {
 		if !safeCheckAddress.MatchString(checkAddress) {
